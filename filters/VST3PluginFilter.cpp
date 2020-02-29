@@ -99,6 +99,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				//das.numSamples = 0;
 				das.processMode = kRealtime;
 				das.symbolicSampleSize = kSample32;
+
 				//das.inputParameterChanges = paramch;
 				/*
 				int pcount = controller->getParameterCount();
