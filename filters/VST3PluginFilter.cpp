@@ -291,14 +291,16 @@ VST3PluginFilter::~VST3PluginFilter()
 					break;
 			}
 			*/
-			
+			/*
 			while (true)
 			{
 				if (component->release() <= 0)
 					break;
 			}
+			*/
 		}
 
+		/*
 		if (fact) {
 			while (true)
 			{
@@ -306,6 +308,7 @@ VST3PluginFilter::~VST3PluginFilter()
 					break;
 			}
 		}
+		*/
 
 		if (host)
 			delete host;
