@@ -20,6 +20,9 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 #define LEAVE_(b)  \
 		 bypass = b; return channelNames;
 
+	InitModuleFunc _InitDll = nullptr;
+	GetPluginFactory _GetPluginFactory = nullptr;
+
 	channelCount = channelNames.size();
 
 	if (channelCount == 0) { LEAVE_(true) }
@@ -39,6 +42,14 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		if (_InitDll && _GetPluginFactory && _InitDll() != 0) {
 			if (fact = _GetPluginFactory())
 			{
+				/*
+				IPluginFactory3* fd;
+
+				if (fact->queryInterface(IPluginFactory3::iid, (void**)& fd) == kResultOk)
+				{
+					fd->setHostContext(host);
+				}
+				*/
 				int classes = fact->countClasses();
 
 				for (size_t i = 0; i < classes; i++)
@@ -46,7 +57,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					PClassInfo cl;
 					fact->getClassInfo(i, &cl);
 
-					std::string classname = VST3::StringConvert::convert(cl.category, 32);
+					std::string classname = VST3::StringConvert::convert(cl.category, PClassInfo::kCategorySize);
 
 					if (classname == kVstAudioEffectClass)
 					{
@@ -80,13 +91,13 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					}
 				}
 			}
-			//controller->setComponentHandler(hhand);
-
 			component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor));
-			//controller->queryInterface(IEditController2::iid)
-
+			
 			if (processor)
 			{
+				int buscountinp = component->getBusCount(kAudio, kInput);
+				int buscountout = component->getBusCount(kAudio, kOutput);
+
 				//cont = {};
 				cont.tempo = 120; //BPM def temp
 				cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
@@ -94,8 +105,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				
 				//das = {};
 				das.processContext = &cont;
-				das.numInputs = channelCount;
-				das.numOutputs = channelCount;
+				das.numInputs = buscountinp;
+				das.numOutputs = buscountout;
 				//das.numSamples = 0;
 				das.processMode = kRealtime;
 				das.symbolicSampleSize = kSample32;
@@ -142,32 +153,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				ProcessSetup setup{ kRealtime, kSample32,(maxFrameCount * channelCount), sampleRate };
 
 				processor->setupProcessing(setup);
-				component->setActive(true);
-				component->setIoMode(kAdvanced);
-				processor->setProcessing(true);
-				
-				int buscountinp = component->getBusCount(kAudio, kInput);
 
-				for (size_t i = 0; i < buscountinp; i++)
-				{
-					//BusInfo info;
-					//component->getBusInfo(kAudio, kInput, i, info);
-
-					component->activateBus(kAudio, kInput, i, true);
-
-				}
-
-				int buscountout = component->getBusCount(kAudio, kOutput);
-
-				for (size_t i = 0; i < buscountout; i++)
-				{
-					//BusInfo info;
-					//component->getBusInfo(kAudio, kOutput, i, info);
-
-					component->activateBus(kAudio, kOutput, i, true);
-				}
-				/*
-				SpeakerArrangement* arr =(SpeakerArrangement*) malloc(sizeof(SpeakerArrangement)* channelCount);
+				SpeakerArrangement* arr = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * channelCount);
 				SpeakerArrangement* arrout = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * channelCount);
 
 				for (size_t i = 0; i < buscountinp; i++)
@@ -197,7 +184,22 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 						break;
 					}
 				}
-				*/
+
+				processor->setBusArrangements(arr, buscountinp, arrout, buscountout);
+				component->setActive(true);
+				component->setIoMode(kAdvanced);
+				processor->setProcessing(true);
+				
+				for (size_t i = 0; i < buscountinp; i++)
+				{
+					component->activateBus(kAudio, kInput, i, true);
+				}
+
+				for (size_t i = 0; i < buscountout; i++)
+				{
+					component->activateBus(kAudio, kOutput, i, true);
+				}
+
 				if (_settings != L"")
 				{
 					settings set;
@@ -212,27 +214,18 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 						try
 						{
-							//controller->setState(&set);
 							component->setState(&set);
-							//controller->setComponentState(&set);
-							//processor->setBusArrangements(0, buscountinp, 0, buscountout);
 						} catch (...)
 						{
 							TraceF(L"VST3 setState plugin failed!");
 						}
-						//set.seek(0, kSeekSet, &seek);
-						//controller->setComponentState(&set);
 					}
 					delete buf;
 				}
 
-				/*
-				processor->setBusArrangements(arr, buscountinp, arrout, buscountout);
-
 				free(arr);
 				free(arrout);
-				*/
-
+				
 				LEAVE_(false)
 			}
 		}
@@ -276,7 +269,8 @@ VST3PluginFilter::~VST3PluginFilter()
 {
 	//Unload plugin
 	try {
-		
+		ExitDll _ExitDll = nullptr;
+
 		//cm->disconnect(cnt);
 		//cnt->disconnect(cm);
 
@@ -300,7 +294,7 @@ VST3PluginFilter::~VST3PluginFilter()
 			
 			while (true)
 			{
-				if (!component->release())
+				if (component->release() <= 0)
 					break;
 			}
 		}
@@ -308,7 +302,7 @@ VST3PluginFilter::~VST3PluginFilter()
 		if (fact) {
 			while (true)
 			{
-				if (!fact->release())
+				if (fact->release() <= 0)
 					break;
 			}
 		}

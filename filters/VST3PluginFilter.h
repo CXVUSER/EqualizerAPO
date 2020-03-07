@@ -180,24 +180,28 @@ public:
 	virtual tresult PLUGIN_API write(void* buffer, int32 numBytes, int32* numBytesWritten = 0) override {
 
 		int num = 0;
+		int size = numBytes + s;
 
 		__try {
 			if (buffer && numBytes)
 			{
 				char* b = reinterpret_cast<char*>(buffer);
 
-
-				buf = (char*)realloc(buf, numBytes + s);
+				buf = (char*)realloc(buf, size);
 				if (!buf)
 					return kResultFalse;
 
+				//memset(buf + seekbuf, 0, numBytes);
+				//memcpy(buf + seekbuf, buffer, numBytes);
+
+				
 				for (size_t i = 0; i < numBytes; i++)
 				{
 					buf[seekbuf + i] = b[i];
 					s++;
 					num++;
 				}
-
+				
 				seekbuf += num;
 
 				if (numBytesWritten)
@@ -505,9 +509,9 @@ private:
 	//pr* paramch = new pr();
 	//hosthandler* hhand = new hosthandler();
 
-	InitModuleFunc _InitDll;
-	GetPluginFactory _GetPluginFactory;
-	ExitDll _ExitDll;
+	//InitModuleFunc _InitDll;
+	//GetPluginFactory _GetPluginFactory;
+	//ExitDll _ExitDll;
 
 	HMODULE Plugindll;
 
