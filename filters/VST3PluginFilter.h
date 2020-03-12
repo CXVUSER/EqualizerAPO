@@ -113,6 +113,12 @@ class settings : public IBStream, ISizeableStream
 {
 public:
 
+	settings() {};
+	~settings() {
+		if (buf)
+			free(buf);
+	};
+
 	virtual tresult PLUGIN_API queryInterface(const TUID _iid, void** obj) override {
 
 		QUERY_INTERFACE(_iid, obj, FUnknown::iid, IBStream)
