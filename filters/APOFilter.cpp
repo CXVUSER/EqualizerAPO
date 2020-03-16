@@ -271,7 +271,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	if (channelCount == 0) { LEAVE_(true) }
 
-	size_t buffersize = (maxFrameCount * channelCount) * sizeof(unsigned int);
+	size_t buffersize = (maxFrameCount * channelCount) * sizeof(float);
 
 	bufferinput = reinterpret_cast<float*> (MemoryHelper::alloc(buffersize));
 	memset(bufferinput, 0, buffersize);
