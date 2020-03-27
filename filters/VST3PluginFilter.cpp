@@ -107,6 +107,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				das.processContext = &cont;
 				das.numInputs = buscountinp;
 				das.numOutputs = buscountout;
+
+
 				//das.numSamples = 0;
 				das.processMode = kRealtime;
 				das.symbolicSampleSize = kSample32;
@@ -190,6 +192,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				component->setIoMode(kAdvanced);
 				processor->setProcessing(true);
 				
+
 				for (size_t i = 0; i < buscountinp; i++)
 				{
 					component->activateBus(kAudio, kInput, i, true);

@@ -554,6 +554,8 @@ APOFilter::~APOFilter()
 #ifdef _IPROP_FX_INTERNAL
 			MH_RELEASE((fxprop))
 #endif // !_IPROP_FX_INTERNAL
+
+			CoFreeUnusedLibrariesEx(0, 0);
 	}
 	catch (...) {
 		TraceF(L"APO Deinitialize failed");
