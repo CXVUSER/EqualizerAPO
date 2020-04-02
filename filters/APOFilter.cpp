@@ -123,12 +123,16 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 					initstruct->pDeviceCollection = pCollection;
 
 					// only for APOInitSystemEffects2 structure
+					
+					/* only used for APOInitSystemEffects2
 					initstruct->nSoftwareIoDeviceInCollection = 0;
 					initstruct->nSoftwareIoConnectorIndex = 0;
 					initstruct->AudioProcessingMode = AudioProcessingMode;
 					initstruct->InitializeForDiscoveryOnly = InitializeForDiscoveryOnly;
+					*/
 					
-					
+
+
 #ifndef _IPROP_FX_INTERNAL
 				}
 				else {
