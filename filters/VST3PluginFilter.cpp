@@ -98,6 +98,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				int buscountinp = component->getBusCount(kAudio, kInput);
 				int buscountout = component->getBusCount(kAudio, kOutput);
 
+				processor->setProcessing(false);
+				component->setActive(false);
+
+				//get max input out channels
+
+				BusInfo infi;
+				BusInfo info;
+
+					component->getBusInfo(kAudio, kInput, 0, infi);
+					component->getBusInfo(kAudio, kOutput, 0, info);
+
 				//cont = {};
 				cont.tempo = 120; //BPM def temp
 				cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
@@ -138,56 +149,103 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				ValueQueue* Queue = new ValueQueue(bypassid,0);
 				paramch->addparam(Queue);
 				*/
-				//setting channels
-				//input_ = {};
-				input_.numChannels = channelCount;
-				//input_.silenceFlags = 0;
-				//output_ = {};
-				output_.numChannels = channelCount;
-				//output_.silenceFlags = 0;
+				
 
 				das.inputs = &input_;
 				das.outputs = &output_;
 
-				processor->setProcessing(false);
-				component->setActive(false);
+				SpeakerArrangement* arr = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * buscountinp);
+				SpeakerArrangement* arrout = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * buscountout);
 
-				ProcessSetup setup{ kRealtime, kSample32,(maxFrameCount * channelCount), sampleRate };
-
-				processor->setupProcessing(setup);
-
-				SpeakerArrangement* arr = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * channelCount);
-				SpeakerArrangement* arrout = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * channelCount);
-
+				//setting channels
 				for (size_t i = 0; i < buscountinp; i++)
 				{
 					switch (channelCount)
 					{
 					case 2:
 						arr[i] = kStereo;
-						arrout[i] = kStereo;
 						break;
 					case 4:
-						arr[i] = kStereo;
-						arrout[i] = k40Music;
+						arr[i] = k40Music;
 						break;
 					case 5:
-						arr[i] = kStereo;
-						arrout[i] = k50;
+						arr[i] = k50;
 						break;
 					case 6:
-						arr[i] = kStereo;
-						arrout[i] = k51;
+						arr[i] = k51;
+						break;
+					case 7:
+						arr[i] = k70Music;
 						break;
 					case 8:
-						arr[i] = kStereo;
-						arrout[i] = k71Cine;
+						arr[i] = k71Music;
+						break;
 					default:
 						break;
 					}
+					if (processor->setBusArrangements(arr, buscountinp, 0, 0) != kResultOk)
+					{
+						arr[i] = kStereo;
+						processor->setBusArrangements(arr, buscountinp, 0, 0);
+						input_.numChannels = 2;
+						break;
+					}
+					input_.numChannels = channelCount;
+				}
+				
+				for (size_t i = 0; i < buscountout; i++)
+				{
+					switch (channelCount)
+					{
+					case 2:
+						arrout[i] = kStereo;
+						break;
+					case 4:
+						arrout[i] = k40Music;
+						break;
+					case 5:
+						arrout[i] = k50;
+						break;
+					case 6:
+						arrout[i] = k51;
+						break;
+					case 7:
+						arrout[i] = k70Music;
+						break;
+					case 8:
+						arrout[i] = k71Music;
+						break;
+					default:
+						break;
+					}
+					if (processor->setBusArrangements(0, 0, arrout, buscountout) != kResultOk)
+					{
+						arr[i] = kStereo;
+						processor->setBusArrangements(0, 0, arrout, buscountout);
+						output_.numChannels = 2;
+						break;
+					}
+					//output_ = {};
+					output_.numChannels = channelCount;
+					//output_.silenceFlags = 0;
 				}
 
-				processor->setBusArrangements(arr, buscountinp, arrout, buscountout);
+				//arrout[i] = kStereo;
+				//arrout[i] = k40Music;
+				//arrout[i] = k50;
+				//arrout[i] = k51;
+				//arrout[i] = k71CineFullRear;
+
+				if (input_.numChannels != channelCount) {
+					ProcessSetup setup{ kRealtime, kSample32,(maxFrameCount * 2), sampleRate };
+					processor->setupProcessing(setup);
+				}
+				else
+				{
+					ProcessSetup setup{ kRealtime, kSample32,(maxFrameCount * channelCount), sampleRate };
+					processor->setupProcessing(setup);
+				}
+					
 				component->setActive(true);
 				component->setIoMode(kAdvanced);
 				processor->setProcessing(true);
