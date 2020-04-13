@@ -146,8 +146,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				das.inputs = &input_;
 				das.outputs = &output_;
 
-				SpeakerArrangement* arr = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * buscountinp);
-				SpeakerArrangement* arrout = (SpeakerArrangement*)malloc(sizeof(SpeakerArrangement) * buscountout);
+				SpeakerArrangement arr[8] = {};
+				//SpeakerArrangement arrout[8] = {};
 
 				//setting channels
 				for (size_t i = 0; i < buscountinp; i++)
@@ -175,69 +175,52 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					default:
 						break;
 					}
+
 					if (processor->setBusArrangements(arr, buscountinp, 0, 0) != kResultOk)
 					{
-						arr[i] = kStereo;
-						processor->setBusArrangements(arr, buscountinp, 0, 0);
+						SpeakerArrangement fake[8] = {};
+						fake[i] = kStereo;
+						processor->setBusArrangements(fake, buscountinp, 0, 0);
 						input_.numChannels = 2;
-						break;
 					}
-					input_.numChannels = channelCount;
-				}
-				
-				for (size_t i = 0; i < buscountout; i++)
-				{
-					switch (channelCount)
+					else
 					{
-					case 2:
-						arrout[i] = kStereo;
-						break;
-					case 4:
-						arrout[i] = k40Music;
-						break;
-					case 5:
-						arrout[i] = k50;
-						break;
-					case 6:
-						arrout[i] = k51;
-						break;
-					case 7:
-						arrout[i] = k70Music;
-						break;
-					case 8:
-						arrout[i] = k71Music;
-						break;
-					default:
-						break;
+						input_.numChannels = channelCount;
 					}
-					if (processor->setBusArrangements(0, 0, arrout, buscountout) != kResultOk)
+					
+					if (processor->setBusArrangements(0, 0, arr, buscountout) != kResultOk)
 					{
-						arr[i] = kStereo;
-						processor->setBusArrangements(0, 0, arrout, buscountout);
+						SpeakerArrangement fake[8] = {};
+						fake[i] = kStereo;
+						processor->setBusArrangements(0, 0, fake, buscountout);
 						output_.numChannels = 2;
-						break;
+					}
+					else
+					{
+						output_.numChannels = channelCount;
 					}
 					//output_ = {};
-					output_.numChannels = channelCount;
-					//output_.silenceFlags = 0;
+					
 				}
-
+			
 				//arrout[i] = kStereo;
 				//arrout[i] = k40Music;
 				//arrout[i] = k50;
 				//arrout[i] = k51;
 				//arrout[i] = k71CineFullRear;
 
+				ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
+
 				if (input_.numChannels != channelCount) {
-					ProcessSetup setup{ kRealtime, kSample32,(maxFrameCount * 2), sampleRate };
-					processor->setupProcessing(setup);
+					setup.maxSamplesPerBlock = (maxFrameCount * 2);
 				}
 				else
 				{
-					ProcessSetup setup{ kRealtime, kSample32,(maxFrameCount * channelCount), sampleRate };
-					processor->setupProcessing(setup);
+					setup.maxSamplesPerBlock = (maxFrameCount * channelCount);
 				}
-					
+				
+				processor->setupProcessing(setup);
+
 				component->setActive(true);
 				component->setIoMode(kAdvanced);
 				processor->setProcessing(true);
@@ -276,8 +259,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					delete buf;
 				}
 
-				free(arr);
-				free(arrout);
+				//free(arr);
+				//free(arrout);
 				
 				LEAVE_(false)
 			}
