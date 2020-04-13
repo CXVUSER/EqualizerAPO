@@ -101,14 +101,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				processor->setProcessing(false);
 				component->setActive(false);
 
-				//get max input out channels
-
-				BusInfo infi;
-				BusInfo info;
-
-					component->getBusInfo(kAudio, kInput, 0, infi);
-					component->getBusInfo(kAudio, kOutput, 0, info);
-
 				//cont = {};
 				cont.tempo = 120; //BPM def temp
 				cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
