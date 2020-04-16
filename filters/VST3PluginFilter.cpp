@@ -7,7 +7,6 @@
 #include "helpers/LogHelper.h"
 #include "VST3PluginFilter.h"
 
-
 using namespace std;
 
 VST3PluginFilter::VST3PluginFilter(FilterEngine* e,std::wstring path, std::wstring settings)
@@ -42,56 +41,67 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		if (_InitDll && _GetPluginFactory && _InitDll() != 0) {
 			if (fact = _GetPluginFactory())
 			{
-				/*
-				IPluginFactory3* fd;
 
-				if (fact->queryInterface(IPluginFactory3::iid, (void**)& fd) == kResultOk)
+				IPluginFactory3* fc;
+
+				if (fact->queryInterface(IPluginFactory3::iid, (void**)& fc) == kResultOk)
 				{
-					fd->setHostContext(host);
+					fc->setHostContext(host);
 				}
-				*/
-				int classes = fact->countClasses();
+				
+				int classes = fc->countClasses();
 
 				for (size_t i = 0; i < classes; i++)
 				{
 					PClassInfo cl;
-					fact->getClassInfo(i, &cl);
+					fc->getClassInfo(i, &cl);
 
 					std::string classname = VST3::StringConvert::convert(cl.category, PClassInfo::kCategorySize);
 
 					if (classname == kVstAudioEffectClass)
 					{
-						fact->createInstance(cl.cid, IComponent::iid, reinterpret_cast<void**> (&component));
+						fc->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component));
 
 						if (component)
 						{
-							component->initialize(host);
-							/*
+							//component->initialize(host);
+						
 							if (component->queryInterface(IEditController::iid, reinterpret_cast<void**> (&controller)) != 0)
 							{
 								TUID controlID;
 
 								component->getControllerClassId(controlID);
-								fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller));
+								fc->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller));
 
+								/*
 								if (controller)
 								{
 									controller->initialize(host);
 								}
+								*/
 							}
-
+							
 							component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm));
 							controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt));
+							component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor));
+							//processor->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cpr));
 
 							cm->connect(cnt);
 							cnt->connect(cm);
-							*/
+							//cpr->connect(cm);
+							//cm->connect(cpr);
+
+							component->initialize(host);
+
+							if (controller)
+							{
+								controller->initialize(host);
+							}
 						}
 						break;
 					}
 				}
 			}
-			component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor));
 			
 			if (processor)
 			{
@@ -111,38 +121,12 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				das.numInputs = buscountinp;
 				das.numOutputs = buscountout;
 
-
 				//das.numSamples = 0;
 				das.processMode = kRealtime;
 				das.symbolicSampleSize = kSample32;
 
 				//das.inputParameterChanges = paramch;
-				/*
-				int pcount = controller->getParameterCount();
-				ParamID bypassid;
-
-				for (size_t i = 0; i < pcount; i++)
-				{
-					ParameterInfo pinfo;
-
-					controller->getParameterInfo(i, pinfo);
-
-						switch (pinfo.flags)
-						{
-						case ParameterInfo::kIsBypass:
-							//Get bypass parameter id
-							bypassid = pinfo.id;
-							break;
-						default:
-							break;
-						}
-				}
-
-				ValueQueue* Queue = new ValueQueue(bypassid,0);
-				paramch->addparam(Queue);
-				*/
 				
-
 				das.inputs = &input_;
 				das.outputs = &output_;
 
@@ -225,15 +209,34 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				component->setIoMode(kAdvanced);
 				processor->setProcessing(true);
 				
-
 				for (size_t i = 0; i < buscountinp; i++)
 				{
-					component->activateBus(kAudio, kInput, i, true);
+					BusInfo inf;
+					component->getBusInfo(kAudio, kInput, i, inf);
+					
+						if ((inf.flags & BusInfo::kDefaultActive) == false)
+						{
+							component->activateBus(kAudio, kInput, i, true);
+						}
+						else
+						{
+							component->activateBus(kAudio, kInput, i, false);
+						}
 				}
 
 				for (size_t i = 0; i < buscountout; i++)
 				{
-					component->activateBus(kAudio, kOutput, i, true);
+					BusInfo inf;
+					component->getBusInfo(kAudio, kOutput, i, inf);
+
+					if ((inf.flags & BusInfo::kDefaultActive) == false)
+					{
+						component->activateBus(kAudio, kOutput, i, true);
+					}
+					else
+					{
+						component->activateBus(kAudio, kOutput, i, false);
+					}
 				}
 
 				if (_settings != L"")
@@ -251,12 +254,113 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 						try
 						{
 							component->setState(&set);
+
 						} catch (...)
 						{
 							TraceF(L"VST3 setState plugin failed!");
 						}
 					}
 					delete buf;
+				}
+				else
+				{
+					//Reset all bypass 
+					int pcount = controller->getParameterCount();
+					//ParamID bypassid[10]; //bypass id
+					//int bpcount = 0; //bypass parameter count
+
+					for (size_t i = 0; i < pcount; i++)
+					{
+						ParameterInfo pinfo;
+						int c = 0;
+						controller->getParameterInfo(i, pinfo);
+
+						std::string pname = VST3::StringConvert::convert(pinfo.title, 128);
+
+						if (!pname.find("Bypass", 0))
+						{
+							controller->setParamNormalized(pinfo.id, 0);
+							/*
+							bypassid[c] = pinfo.id;
+							c++;
+							bpcount++;
+							*/
+						}
+
+						/*
+							switch (pinfo.flags)
+							{
+							case ParameterInfo::kIsBypass:
+								//Get bypass parameter id
+								bypassid[c] = pinfo.id;
+								c++;
+								bpcount++;
+								break;
+							default:
+								break;
+							}
+						*/
+					}
+
+					IUnitInfo* xxx;
+					
+					component->queryInterface(IUnitInfo::iid, (void**) &xxx);
+
+					if (xxx)
+					{
+						int unitc = xxx->getUnitCount();
+
+						for (size_t i = 0; i < unitc; i++)
+						{
+							UnitInfo inf;
+							xxx->getUnitInfo(i, inf);
+							int presets = xxx->getProgramListCount();
+
+							for (size_t i = 0; i < presets; i++)
+							{
+								ProgramListInfo inf;
+								xxx->getProgramListInfo(i, inf);
+
+								for (size_t i = 0; i < inf.programCount; i++)
+								{
+									String128 asd;
+									xxx->getProgramName(inf.id,i,asd);
+
+									std::string pname = VST3::StringConvert::convert(asd, 128);
+
+									if (pname == "Default")
+									{
+										for (size_t o = 0; o < pcount; o++)
+										{
+											ParameterInfo pinfo;
+											int c = 0;
+											controller->getParameterInfo(o, pinfo);
+
+											std::string pname = VST3::StringConvert::convert(pinfo.title, 128);
+
+											if (!pname.find("Program", 0))
+											{
+												controller->setParamNormalized(pinfo.id, i);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					
+					/*
+					for (size_t i = 0; i < bpcount; i++)
+					{
+						ValueQueue* Queue = new ValueQueue(bypassid[i], 0);
+						//ValueQueue* Queue1 = new ValueQueue(bypassid[i], 1);
+						//ValueQueue* Queue2 = new ValueQueue(bypassid[i], 0);
+						paramch->addparam(Queue);
+						//paramch->addparam(Queue1);
+						//paramch->addparam(Queue2);
+
+					};
+					*/
 				}
 
 				//free(arr);
@@ -307,8 +411,8 @@ VST3PluginFilter::~VST3PluginFilter()
 	try {
 		ExitDll _ExitDll = nullptr;
 
-		//cm->disconnect(cnt);
-		//cnt->disconnect(cm);
+		cm->disconnect(cnt);
+		cnt->disconnect(cm);
 
 		if (processor)
 			processor->setProcessing(false);
@@ -317,7 +421,7 @@ VST3PluginFilter::~VST3PluginFilter()
 		{
 			component->setActive(false);
 			
-			//controller->terminate();
+			controller->terminate();
 			component->terminate();
 			
 			/*
@@ -345,7 +449,7 @@ VST3PluginFilter::~VST3PluginFilter()
 			}
 		}
 		*/
-
+		
 		if (host)
 			delete host;
 

@@ -21,6 +21,7 @@
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
+#include "pluginterfaces/vst/ivstunits.h"
 #include "pluginterfaces/vst/ivstnoteexpression.h"
 #include "pluginterfaces/vst/ivsthostapplication.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
@@ -496,16 +497,17 @@ private:
 	IComponent* component;
 	IAudioProcessor* processor;
 	IPluginFactory* fact;
-	//IEditController* controller;
+	IEditController* controller;
 
 	//Audio bus
 	AudioBusBuffers input_ = {};
 	AudioBusBuffers output_ = {};
 
 	//Conenction
-	//Steinberg::Vst::IConnectionPoint* cm;
-	//Steinberg::Vst::IConnectionPoint* cnt;
-	
+	Steinberg::Vst::IConnectionPoint* cm;
+	Steinberg::Vst::IConnectionPoint* cnt;
+	//Steinberg::Vst::IConnectionPoint* cpr;
+
 	//ConnectionProxy* componentCP;
 	//ConnectionProxy* controllerCP;
 	
