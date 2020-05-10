@@ -23,6 +23,7 @@
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pluginterfaces/vst/ivstunits.h"
 #include "pluginterfaces/vst/ivstnoteexpression.h"
+#include "pluginterfaces/vst/ivstevents.h"
 #include "pluginterfaces/vst/ivsthostapplication.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "pluginterfaces/vst/vsttypes.h"
@@ -384,14 +385,11 @@ public:
 		/** Returns count of Parameter changes in the list. */
 	virtual int32 PLUGIN_API getParameterCount() override {
 
-		OutputDebugStringA("getParameterCount");
 		return p.size();
 	};
 
 	/** Returns the queue at a given index. */
 	virtual IParamValueQueue* PLUGIN_API getParameterData(int32 index) override {
-
-		OutputDebugStringA("getParameterData");
 
 		return p[index];
 	};
@@ -400,7 +398,6 @@ public:
 	returns it and its index in the parameter changes list. */
 	virtual IParamValueQueue* PLUGIN_API addParameterData(const Vst::ParamID& id, int32& index /*out*/) override {
 
-		OutputDebugStringA("addParameterData");
 		return 0;
 	};
 
@@ -471,6 +468,55 @@ private:
 };
 
 
+
+//Event handler class
+class inpev : public IEventList
+{
+public:
+	inpev() {};
+	~inpev() {};
+
+	virtual tresult PLUGIN_API queryInterface(const TUID _iid, void** obj) override {
+		QUERY_INTERFACE(_iid, obj, FUnknown::iid, IEventList)
+			QUERY_INTERFACE(_iid, obj, IEventList::iid, IEventList)
+
+			* obj = nullptr;
+		return kResultFalse;
+	};
+
+	virtual uint32 PLUGIN_API addRef() override {
+		return 1;
+	};
+
+	virtual uint32 PLUGIN_API release() override {
+		return 1;
+	};
+
+	/** Returns the count of events. */
+	virtual int32 PLUGIN_API getEventCount() override {
+		OutputDebugStringA("getEventCount");
+		//OOOOPS!
+		return 0;
+	};
+
+	/** Gets parameter by index. */
+	virtual tresult PLUGIN_API getEvent(int32 index, Event& e /*out*/) override {
+		//OOOOPS!
+		OutputDebugStringA("getEvent");
+		return kResultFalse;
+	};
+
+	/** Adds a new event. */
+	virtual tresult PLUGIN_API addEvent(Event& e /*in*/) override {
+		//OOOOPS!
+		OutputDebugStringA("addEvent");
+		return kResultFalse;
+	};
+
+private:
+
+};
+
 #pragma AVRT_VTABLES_BEGIN
 class VST3PluginFilter : public IFilter
 {
@@ -511,10 +557,11 @@ private:
 	//ConnectionProxy* componentCP;
 	//ConnectionProxy* controllerCP;
 	
-	ProcessData das = {};
+	ProcessData pcd = {};
 	Steinberg::Vst::ProcessContext cont = {};
 	FUnknown* host = new MyDAW();
-	//pr* paramch = new pr();
+	pr* paramch = new pr();
+	inpev* ivent = new inpev();
 	//hosthandler* hhand = new hosthandler();
 
 	//InitModuleFunc _InitDll;
