@@ -76,15 +76,17 @@ bool IPropertyStoreFX::IsBadPtr(char* mem, size_t size)
 
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
-	
+#define LEAVE_(p)	\
+		LeaveCriticalSection(&cr);	\
+		return p;
+
 #define RET_DEV_STRING(p)	\
 		wchar_t* name = reinterpret_cast<wchar_t*> (CoTaskMemAlloc(240));	\
 		memset(name,0,240); \
 		wcscpy(name, p);	\
 		pv->vt = VT_LPWSTR;	\
 		pv->pwszVal = name;	\
-		LeaveCriticalSection(&(this->cr));	\
-		return S_OK;	
+		LEAVE_(S_OK)
 
 	EnterCriticalSection(&cr);
 
@@ -92,7 +94,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (pv == 0)
 	{
-		return E_POINTER;
+		LEAVE_(E_POINTER)
 	}
 
 	wchar_t keystr[128] = { 0 };
@@ -104,17 +106,17 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		CLSID cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-			if (!FAILED(CLSIDFromString((this->_guid).c_str(), &cl)) |
-				!FAILED(StringFromCLSID(cl, &gd)))
-			{
-				pv->vt = VT_LPWSTR;
-				pv->pwszVal = gd;
-				LeaveCriticalSection(&cr);
-				return S_OK;
-			}
-			else {
-				CoTaskMemFree(gd);
-			}
+		if (!FAILED(CLSIDFromString((this->_guid).c_str(), &cl)) |
+			!FAILED(StringFromCLSID(cl, &gd)))
+		{
+			pv->vt = VT_LPWSTR;
+			pv->pwszVal = gd;
+			LEAVE_(S_OK)
+		}
+		else {
+			CoTaskMemFree(gd);
+			LEAVE_(E_FAIL)
+		}
 	}
 
 	if (key == PKEY_DeviceInterface_FriendlyName) //soundcard name
@@ -141,149 +143,139 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		key.fmtid.Data4[7],
 		key.pid);
 
-	if (!FAILED(hr))
-	{
-		DWORD type = 0;
-		DWORD size = 0;
-
-		LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
-
-		if (status)
-		{
-			LeaveCriticalSection(&cr);
-			return E_FAIL;
-		}
-			
-
-			if (type == REG_NONE)
-				return E_FAIL;
-			
-			if (type == REG_SZ)
-			{
-				DWORD sdata = size;
-
-				wchar_t* x = reinterpret_cast<wchar_t*>(CoTaskMemAlloc(size));
-
-				LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
-
-				if (!status) {
-					pv->vt = VT_LPWSTR;
-					pv->pwszVal = x;
-					hr = S_OK;
-				}
-				return hr;
-			}
-
-			if (type == REG_DWORD)
-			{
-				DWORD sdata = size;
-
-				if (size == 4)
-				{
-					LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &sdata);
-
-					if (!status) {
-						pv->vt = VT_UI4;
-						hr = S_OK;
-					}
-				}
-				return hr;
-			}
-
-			if (type == REG_BINARY)
-			{
-				DWORD sdata = size;
-				PROPVARIANT pvdata = { 0 };
-
-				LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_BINARY, 0, &pvdata, &sdata);
-
-				if (!status)
-				{
-					HRESULT h = DeserializePropVarinat(REG_BINARY, &pvdata, size, pv);
-					if (!h)
-						hr = S_OK;
-				}
-				return hr;
-			}
-
-			if (type == REG_MULTI_SZ)
-			{
-				DWORD sdata = size;
-				LPVOID str = CoTaskMemAlloc(size);
-				LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
-
-				if (!status) {
-					hr = InitPropVariantFromStringAsVector((PCWSTR)str, pv);
-
-					if (FAILED(hr))
-						hr = E_FAIL;
-
-					CoTaskMemFree(str);
-					hr = S_OK;
-				}
-				return hr;
-			}
-
-			if (type == REG_EXPAND_SZ) {
-
-				size_t s = size + 2;
-				DWORD sdata;
-
-				void* vm = CoTaskMemAlloc(s);
-
-				if (vm)
-				{
-					IMalloc* ml;
-
-					size_t s2 = 0;
-
-					if (!FAILED(CoGetMalloc(true, &ml)))
-					{
-						s2 = ml->GetSize(vm);
-						ml->Release();
-					}
-
-					memset(vm, 0, s2);
-
-					LSTATUS status = RegGetValueW(reg, 0, keystr, 0x6, 0, vm, &sdata);
-
-					if (status != ERROR_FILE_NOT_FOUND) {
-
-						if (status == ERROR_SUCCESS)
-						{
-							wchar_t buf[520];
-							memset(buf, 0, 208);
-
-							if (SHLoadIndirectString((PCWSTR)vm, buf, 260, 0) != E_FAIL)
-							{
-								pv->vt = VT_LPWSTR; // 0x1F
-								pv->pwszVal = (LPWSTR) buf;
-								LeaveCriticalSection(&cr);
-								return S_OK;
-							}
-							else
-							{
-								if (GetLastError() == ERROR_ACCESS_DENIED) {
-									LeaveCriticalSection(&cr);
-									hr = 0x39c;
-									return hr;
-								}
-							}
-						}
-						else
-						{
-							LeaveCriticalSection(&cr);
-							hr = 0x39c;
-							return hr;
-						}
-					}
-				}
-				return hr;
-			}
+	if (FAILED(hr)) {
+		LEAVE_(E_FAIL)
 	}
-	
-	LeaveCriticalSection(&(this->cr));
-	return hr;
+
+	DWORD type = 0;
+	DWORD size = 0;
+
+	LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
+
+	if (status) {
+		LEAVE_(E_FAIL)
+	}
+
+	if (type == REG_NONE) {
+		LEAVE_(E_FAIL)
+	}
+
+		if (type == REG_SZ)
+		{
+			DWORD sdata = size;
+
+			wchar_t* x = reinterpret_cast<wchar_t*>(CoTaskMemAlloc(size));
+
+			LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
+
+			if (!status) {
+				pv->vt = VT_LPWSTR;
+				pv->pwszVal = x;
+				hr = S_OK;
+			}
+			LEAVE_(hr)
+		}
+
+	if (type == REG_DWORD)
+	{
+		DWORD sdata = size;
+
+		if (size == 4)
+		{
+			LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &sdata);
+
+			if (!status) {
+				pv->vt = VT_UI4;
+				hr = S_OK;
+			}
+		}
+		LEAVE_(hr)
+	}
+
+	if (type == REG_BINARY)
+	{
+		DWORD sdata = size;
+		PROPVARIANT pvdata = { 0 };
+
+		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_BINARY, 0, &pvdata, &sdata);
+
+		if (!status)
+		{
+			HRESULT h = DeserializePropVarinat(REG_BINARY, &pvdata, size, pv);
+			if (!h)
+				hr = S_OK;
+		}
+		LEAVE_(hr)
+	}
+
+	if (type == REG_MULTI_SZ)
+	{
+		DWORD sdata = size;
+		LPVOID str = CoTaskMemAlloc(size);
+		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
+
+		if (!status) {
+			hr = InitPropVariantFromStringAsVector((PCWSTR)str, pv);
+
+			if (FAILED(hr))
+				hr = E_FAIL;
+
+			CoTaskMemFree(str);
+			hr = S_OK;
+		}
+		LEAVE_(hr)
+	}
+
+	if (type == REG_EXPAND_SZ) {
+		size_t s = size + 2;
+		DWORD sdata;
+
+		void* vm = CoTaskMemAlloc(s);
+
+		if (vm)
+		{
+			IMalloc* ml;
+			size_t s2 = 0;
+
+			if (!FAILED(CoGetMalloc(true, &ml)))
+			{
+				s2 = ml->GetSize(vm);
+				ml->Release();
+			}
+
+			memset(vm, 0, s2);
+
+			LSTATUS status = RegGetValueW(reg, 0, keystr, 0x6, 0, vm, &sdata);
+
+			if (status != ERROR_FILE_NOT_FOUND) {
+				if (status == ERROR_SUCCESS)
+				{
+					wchar_t buf[520];
+					memset(buf, 0, 208);
+
+					if (SHLoadIndirectString((PCWSTR)vm, buf, 260, 0) != E_FAIL)
+					{
+						pv->vt = VT_LPWSTR; // 0x1F
+						pv->pwszVal = (LPWSTR)buf;
+						LEAVE_(S_OK)
+					}
+					else
+					{
+						if (GetLastError() == ERROR_ACCESS_DENIED) {
+							LEAVE_(0x39c)
+						}
+					}
+				}
+				else
+				{
+					LEAVE_(0x39c)
+				}
+			}
+		}
+		LEAVE_(hr)
+	}
+
+	LEAVE_(hr)
 };
 
 HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
