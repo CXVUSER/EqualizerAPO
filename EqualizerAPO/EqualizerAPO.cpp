@@ -603,11 +603,13 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 											hr = CLSIDFromString(value.c_str(), &g);
 
 											if (!FAILED(hr))
-												hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
-											if (!FAILED(hr))
 											{
-												hr = ish->AddPages(pfnAddPage, lParam);
-												ish->Release();
+												hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
+												if (!FAILED(hr))
+												{
+													hr = ish->AddPages(pfnAddPage, lParam);
+													ish->Release();
+												}
 											}
 										}
 										catch (...)

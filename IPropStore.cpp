@@ -86,9 +86,10 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LeaveCriticalSection(&(this->cr));	\
 		return S_OK;	
 
+	EnterCriticalSection(&cr);
+
 	HRESULT hr = E_FAIL;
 
-	
 	if (pv == 0)
 	{
 		return E_POINTER;
@@ -97,8 +98,6 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	wchar_t keystr[128] = { 0 };
 
 	memset(pv, 0, sizeof(PROPVARIANT));
-
-	EnterCriticalSection(&cr);
 
 	if (key == PKEY_AudioEndpoint_GUID)
 	{
@@ -149,16 +148,17 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 		LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
 
-		if (!status)
-		{
-			if (type == REG_NONE)
-				hr = E_FAIL;
+		if (status)
+			return E_FAIL;
 
+			if (type == REG_NONE)
+				return E_FAIL;
+			
 			if (type == REG_SZ)
 			{
 				DWORD sdata = size;
 
-				wchar_t* x = new wchar_t[250];
+				wchar_t* x = reinterpret_cast<wchar_t*>(CoTaskMemAlloc(size));
 
 				LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
 
@@ -167,6 +167,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					pv->pwszVal = x;
 					hr = S_OK;
 				}
+				return hr;
 			}
 
 			if (type == REG_DWORD)
@@ -182,7 +183,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 						hr = S_OK;
 					}
 				}
-
+				return hr;
 			}
 
 			if (type == REG_BINARY)
@@ -198,6 +199,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					if (!h)
 						hr = S_OK;
 				}
+				return hr;
 			}
 
 			if (type == REG_MULTI_SZ)
@@ -215,6 +217,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					CoTaskMemFree(str);
 					hr = S_OK;
 				}
+				return hr;
 			}
 
 			if (type == REG_EXPAND_SZ) {
@@ -271,8 +274,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 						}
 					}
 				}
+				return hr;
 			}
-		}
 	}
 	
 	LeaveCriticalSection(&(this->cr));
