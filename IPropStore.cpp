@@ -149,7 +149,11 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
 
 		if (status)
+		{
+			LeaveCriticalSection(&cr);
 			return E_FAIL;
+		}
+			
 
 			if (type == REG_NONE)
 				return E_FAIL;
