@@ -382,17 +382,22 @@ VST3PluginFilter::~VST3PluginFilter()
 	try {
 		ExitDll _ExitDll = nullptr;
 
-		cm->disconnect(cnt);
-		cnt->disconnect(cm);
-
+		if (cm != 0 & cnt != 0)
+		{
+			cm->disconnect(cnt);
+			cnt->disconnect(cm);
+		}
+		
 		if (processor)
 			processor->setProcessing(false);
 		
 		if (component)
 		{
 			component->setActive(false);
+
+			if (controller)
+				controller->terminate();
 			
-			controller->terminate();
 			component->terminate();
 			
 			/*

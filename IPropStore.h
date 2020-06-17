@@ -36,10 +36,10 @@ public:
 	virtual ULONG Release();
 
 	//IPropertyStore
-	virtual HRESULT Getcount();
-	virtual HRESULT Getat();
+	virtual HRESULT Getcount() { return E_NOTIMPL; };
+	virtual HRESULT Getat() { return E_NOTIMPL; };
 	virtual HRESULT Getvalue(REFPROPERTYKEY key, PROPVARIANT* pv);
-	virtual HRESULT Setvalue();
+	virtual HRESULT Setvalue() { return E_NOTIMPL; };
 	virtual HRESULT TryOpenPropertyStoreRegKey(bool* result);
 	HRESULT DeserializePropVarinat(int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest);
 	//__declspec(noinline) static bool IsBadPtr(char* mem, size_t size);

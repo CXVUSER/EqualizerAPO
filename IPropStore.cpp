@@ -25,9 +25,6 @@ IPropertyStoreFX::~IPropertyStoreFX() {
 HRESULT IPropertyStoreFX::QueryInterface(const IID& riid, void** ppvObject) {
 	if (riid == GUID_NULL)
 		return S_OK;
-	//if (riid == unknw_gd)
-	//	return S_OK;
-
 	return E_NOINTERFACE;
 };
 
@@ -44,8 +41,6 @@ ULONG IPropertyStoreFX::Release() {
 };
 
 //IPropertyStore
-HRESULT IPropertyStoreFX::Getcount() { return E_NOTIMPL; };
-HRESULT IPropertyStoreFX::Getat() { return E_NOTIMPL; };
 
 /*
 #pragma optimize("",off)
@@ -84,7 +79,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	
 #define RET_DEV_STRING(p)	\
 		wchar_t* name = reinterpret_cast<wchar_t*> (CoTaskMemAlloc(240));	\
-		name = p;	\
+		memset(name,0,240); \
+		wcscpy(name, p);	\
 		pv->vt = VT_LPWSTR;	\
 		pv->pwszVal = name;	\
 		LeaveCriticalSection(&(this->cr));	\
@@ -92,24 +88,10 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	HRESULT hr = E_FAIL;
 
-		/*
-		if (IsBadPtr(reinterpret_cast<char*>(pv), sizeof(PROPVARIANT)))
-		{
-			return E_FAIL;
-		}
-		if (IsBadPtr((char*)& key, sizeof(REFPROPERTYKEY)))
-		{
-			return E_FAIL;
-		}
-		*/
-
+	
 	if (pv == 0)
 	{
-		return E_FAIL;
-	}
-	if ((char*)&key == 0)
-	{
-		return E_FAIL;
+		return E_POINTER;
 	}
 
 	wchar_t keystr[128] = { 0 };
@@ -123,16 +105,17 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		CLSID cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if (!FAILED(CLSIDFromString((this->_guid).c_str(), &cl)))
-		{
-			if (!FAILED(StringFromCLSID(cl, &gd)))
+			if (!FAILED(CLSIDFromString((this->_guid).c_str(), &cl)) |
+				!FAILED(StringFromCLSID(cl, &gd)))
 			{
 				pv->vt = VT_LPWSTR;
 				pv->pwszVal = gd;
 				LeaveCriticalSection(&cr);
 				return S_OK;
 			}
-		}
+			else {
+				CoTaskMemFree(gd);
+			}
 	}
 
 	if (key == PKEY_DeviceInterface_FriendlyName) //soundcard name
@@ -295,7 +278,6 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	LeaveCriticalSection(&(this->cr));
 	return hr;
 };
-HRESULT IPropertyStoreFX::Setvalue() { return E_NOTIMPL; };
 
 HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
 {
@@ -308,13 +290,13 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
 	EnterCriticalSection(&cr);
 
 	std::wstring regfx = MM_DEV_AUD_REG_PATH;
-	std::wstring regprop = MM_DEV_AUD_REG_PATH;
+	//std::wstring regprop = MM_DEV_AUD_REG_PATH;
 
 	hr = CoCreateInstance(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**> (&enumemator));
-	if (!FAILED(hr))
+	if (!FAILED(hr) || enumemator)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -322,50 +304,54 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
 		fulldevice += (this->_guid);
 
 		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
-		if (!FAILED(hr))
+		if (!FAILED(hr) || imd)
 		{
-			imd->QueryInterface(__uuidof(IMMEndpoint), (void**)& ime);
-			ime->GetDataFlow(&devicetype);
+			if (imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime)) ||
+				ime == 0 || FAILED(ime->GetDataFlow(&devicetype)))
+				return E_FAIL;
+
+			switch (devicetype)
+			{
+			case eRender:
+				regfx += L"Render\\" + (this->_guid) + L"\\FxProperties";
+
+				/*
+				regprop += L"Render\\" + (this->_guid) + L"\\Properties";
+				*/
+				break;
+			case eCapture:
+				regfx += L"Capture\\" + (this->_guid) + L"\\FxProperties";
+
+				/*
+				regprop += L"Capture\\" + (this->_guid) + L"\\Properties";
+				*/
+				break;
+			case eAll:
+				hr = E_FAIL;
+				break;
+			default:
+				break;
+			}
+
+			ime->Release();
+			imd->Release();
 		}
-
-		switch (devicetype)
-		{
-		case eRender:
-			regfx += L"Render\\";
-			regfx += (this->_guid);
-			regfx += L"\\FxProperties";
-
-			regprop += L"Render\\";
-			regprop += (this->_guid);
-			regprop += L"\\Properties";
-
-			break;
-		case eCapture:
-			regfx += L"Capture\\";
-			regfx += (this->_guid);
-			regfx += L"\\FxProperties";
-
-			regprop += L"Capture\\";
-			regprop += (this->_guid);
-			regprop += L"\\Properties";
-
-			break;
-		default:
-			break;
-		}
-
-		ime->Release();
-		imd->Release();
 	}
 
-	(this->reg) = RegistryHelper::openKey(regfx, (this->_dwAcc));
-	//(this->regProp) = RegistryHelper::openKey(regprop, (this->_dwAcc));
+	if (!((this->reg) = RegistryHelper::openKey(regfx, (this->_dwAcc))))
+		hr = E_FAIL;
+
+	/*
+	if (!((this->regProp) = RegistryHelper::openKey(regProp, (this->_dwAcc))))
+		hr = E_FAIL;
+	*/
+
 	LeaveCriticalSection(&(this->cr));
 
 	return hr;
 }
 
-HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest) //Ooops 
+HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest)
 {
 	if (!src)
 		return E_FAIL;

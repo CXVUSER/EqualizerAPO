@@ -45,10 +45,8 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 	IMMEndpointInternal* pInternal = NULL;
 #endif
 
-	if (initstruct != 0)
+	if (initstruct != 0 | clsid != GUID_NULL)
 	{
-		if (clsid != GUID_NULL)
-		{
 			memset(initstruct, 0, sizeof(APOInitSystemEffects2));
 
 			hr = aDev->OpenPropertyStore(
@@ -56,7 +54,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 
 #ifndef _IPROP_FX_INTERNAL
 
-			if (!FAILED(hr))
+			if (!FAILED(hr) || pProps)
 			{
 				hr = aDev->QueryInterface(IID_IMMEndpointInternal,reinterpret_cast<void**> (& pInternal)); //Windows 10 October 2018 update
 				if (FAILED(hr))
@@ -71,7 +69,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 				if (pInternal == NULL)
 					return true;
 #endif
-				if (!FAILED(hr))
+				if (!FAILED(hr) || pProps)
 				{
 					//Get apo settings
 
@@ -146,12 +144,11 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 			else {
 				TraceF(L"aDev->OpenPropertyStore failed!!!");
 			}
-		}
 	}
 
 	return true;
 }
-
+/*
 HRESULT APOFilter::IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* oppositeformat, WAVEFORMATEX* requestedformat,WAVEFORMATEX** fsupported)
 {
 	IAudioMediaType* oppf = 0;
@@ -200,6 +197,7 @@ HRESULT APOFilter::IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* o
 
 	return hr;
 }
+*/
 
 /*
 namespace Private_ {
@@ -290,7 +288,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**>(& pEnumerator));
-	if (FAILED(hr))
+	if (FAILED(hr) || !pEnumerator)
 	{
 		TraceF(L"MMDeviceEnumerator CoCreateInstance failed!!!"); LEAVE_(true)
 	} 
@@ -311,7 +309,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	hr = (this->pEnumerator)->EnumAudioEndpoints(
 		devicetype, DEVICE_STATE_ACTIVE,
 		& (this->pCollection));
-	if (FAILED(hr))
+	if (FAILED(hr) || !pCollection)
 	{
 		TraceF(L"Enum Audio Endpoints failed!!!"); 
 		LEAVE_(true)
@@ -422,7 +420,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		w.cbSize = 0;
 
 		hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX),& iAudType);
-		if (FAILED(hr))
+		if (FAILED(hr) || !iAudType)
 		{
 			TraceF(L"CreateAudioMediaType Error");
 			LEAVE_(true)

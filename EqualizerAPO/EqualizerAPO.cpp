@@ -587,9 +587,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 							}
 						}
 
-						if (!lock)
-						{
-							if (key == L"APO")
+							if (!lock & key == L"APO")
 							{
 								vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
 								for (unsigned i = 0; i + 1 < parts.size(); i += 2)
@@ -619,7 +617,6 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 									}
 								}
 							}
-						}
 					}
 				}
 				return hr;
