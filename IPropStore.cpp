@@ -76,6 +76,7 @@ bool IPropertyStoreFX::IsBadPtr(char* mem, size_t size)
 
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
+
 #define LEAVE_(p)	\
 		LeaveCriticalSection(&cr);	\
 		return p;
@@ -262,13 +263,13 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					else
 					{
 						if (GetLastError() == ERROR_ACCESS_DENIED) {
-							LEAVE_(0x39c)
+							LEAVE_(E_FAIL)
 						}
 					}
 				}
 				else
 				{
-					LEAVE_(0x39c)
+					LEAVE_(E_FAIL)
 				}
 			}
 		}

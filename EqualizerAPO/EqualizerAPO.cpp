@@ -513,115 +513,108 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	std::wstring cpath = L"";
 
 	LPWSTR eguid = &reinterpret_cast<AudioFXExtensionParams*>(lParam)
-		->pwstrEndpointID[17]; //Soundcard GUID	
+		->pwstrEndpointID[17]; //Soundcard GUID
 
 	cpath = RegistryHelper::readValue(APP_REGPATH, L"ConfigPath");
 
-	if (cpath != L"")
+	if (cpath == L"")
+		return E_FAIL;
+
+	if (!(this)->first) {
+		cpath += L"\\config.txt";
+		(this)->first = true;
+	}
+	else {
+		cpath += L"\\" + (this)->path;
+	};
+
+	if (PathIsRelative(cpath.c_str()) == 1)
+		return E_FAIL;
+
+	if ((hFile = CreateFileW(cpath.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0)) == 0)
+		return E_FAIL;
+
+	stringstream inputStream;
+
+	char buf[8192];
+	unsigned long bytesRead = -1;
+	while (ReadFile(hFile, buf, sizeof(buf), &bytesRead, 0) && bytesRead != 0)
 	{
-		if (!(this)->first) {
-			cpath += L"\\config.txt";
-			(this)->first = true;
-		}
-		else {
-			cpath += L"\\" + (this)->path;
-		};
+		inputStream.write(buf, bytesRead);
+	}
 
-		if (!PathIsRelative(cpath.c_str()))
+	CloseHandle(hFile);
+
+	inputStream.seekg(0);
+
+	while (inputStream.good())
+	{
+		string encodedLine;
+		getline(inputStream, encodedLine);
+		if (encodedLine.size() > 0 && encodedLine[encodedLine.size() - 1] == '\r')
+			encodedLine.resize(encodedLine.size() - 1);
+
+		wstring line = StringHelper::toWString(encodedLine, CP_UTF8);
+		if (line.find(L'\uFFFD') != -1)
+			line = StringHelper::toWString(encodedLine, CP_ACP);
+
+		size_t pos = line.find(L':');
+		if (pos != -1)
 		{
-			//do
-			//{
-			hFile = CreateFileW(cpath.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-			//} while (hFile == INVALID_HANDLE_VALUE);
+			wstring key = line.substr(0, pos);
+			wstring value = line.substr(pos + 1);
 
-			if (hFile)
+			// allow to use indentation
+			key = StringHelper::trim(key);
+
+			if (key == L"Include")
 			{
-				stringstream inputStream;
+				(this)->path = (value.c_str() + 1);
+				hr = (this)->AddPages(pfnAddPage, lParam);
+			}
 
-				char buf[8192];
-				unsigned long bytesRead = -1;
-				while (ReadFile(hFile, buf, sizeof(buf), &bytesRead, 0) && bytesRead != 0)
+			if (key == L"Device")
+			{
+				std::size_t found = value.find(eguid);
+				if (found != std::wstring::npos)
 				{
-					inputStream.write(buf, bytesRead);
+					lock = false;
 				}
+				else {
+					lock = true;
+				}
+			}
 
-				CloseHandle(hFile);
-
-				inputStream.seekg(0);
-
-				while (inputStream.good())
+			if (!lock & key == L"APO")
+			{
+				vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
+				for (unsigned i = 0; i + 1 < parts.size(); i += 2)
 				{
-					string encodedLine;
-					getline(inputStream, encodedLine);
-					if (encodedLine.size() > 0 && encodedLine[encodedLine.size() - 1] == '\r')
-						encodedLine.resize(encodedLine.size() - 1);
+					wstring key = parts[i];
+					wstring value = parts[i + 1];
 
-					wstring line = StringHelper::toWString(encodedLine, CP_UTF8);
-					if (line.find(L'\uFFFD') != -1)
-						line = StringHelper::toWString(encodedLine, CP_ACP);
-
-					size_t pos = line.find(L':');
-					if (pos != -1)
-					{
-						wstring key = line.substr(0, pos);
-						wstring value = line.substr(pos + 1);
-
-						// allow to use indentation
-						key = StringHelper::trim(key);
-
-						if (key == L"Include")
+					if (key == L"UI") {
+						try
 						{
-							(this)->path = (value.c_str() + 1);
-							hr = (this)->AddPages(pfnAddPage, lParam);
-						}
+							GUID g;
+							hr = CLSIDFromString(value.c_str(), &g);
 
-						if (key == L"Device")
-						{
-							std::size_t found = value.find(eguid);
-							if (found != std::wstring::npos)
+							if (!FAILED(hr))
 							{
-								lock = false;
-							}
-							else {
-								lock = true;
-							}
-						}
-
-						if (!lock & key == L"APO")
-							{
-								vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
-								for (unsigned i = 0; i + 1 < parts.size(); i += 2)
+								hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
+								if (!FAILED(hr))
 								{
-									wstring key = parts[i];
-									wstring value = parts[i + 1];
-
-									if (key == L"UI") {
-
-										try
-										{
-											GUID g;
-											hr = CLSIDFromString(value.c_str(), &g);
-
-											if (!FAILED(hr))
-											{
-												hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
-												if (!FAILED(hr))
-												{
-													hr = ish->AddPages(pfnAddPage, lParam);
-													ish->Release();
-												}
-											}
-										}
-										catch (...)
-										{
-											TraceF(L" UI library crashed name: %s", value.c_str());
-										}
-									}
+									hr = ish->AddPages(pfnAddPage, lParam);
+									ish->Release();
 								}
-						}		
+							}
+						}
+						catch (...)
+						{
+							TraceF(L" UI library crashed name: %s", value.c_str());
+						}
 					}
 				}
-				return hr;
 			}
 		}
 	}
