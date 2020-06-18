@@ -75,7 +75,6 @@ private:
 		GUID clsid,
 		GUID AudioProcessingMode,
 		bool InitializeForDiscoveryOnly,
-		int __MIDL___MIDL_itf_audioengineendpoint_0000_0000_0001,
 		APOInitSystemEffects2* initstruct);
 	
 	//__declspec(noinline) HRESULT IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* input, WAVEFORMATEX* output,WAVEFORMATEX** fsupported);

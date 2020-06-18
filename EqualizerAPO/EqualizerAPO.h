@@ -70,7 +70,8 @@ public:
 	static const CRegAPOProperties<1> regPostMixProperties;
 	static const CRegAPOProperties<1> regPreMixProperties;
 
-	//IShellPropSheetext CDevicePropertPage
+	//IShellPropSheetext class
+	//for chaining UI APO libraries
 	virtual IFACEMETHODIMP EqualizerAPO::AddPages(
 		__in LPFNADDPROPSHEETPAGE pfnAddPage,
 		__in LPARAM lParam);

@@ -55,9 +55,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		{
 			try
 			{
-				fact->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component));
-
-				if (component)
+				if ((fact->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component)) == kResultTrue) &
+					component != 0)
 				{
 					if (component->queryInterface(IEditController::iid, reinterpret_cast<void**> (&controller)) != 0)
 					{
@@ -65,10 +64,10 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 						component->getControllerClassId(controlID);
 
-						if (fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller)) == kResultTrue &
+						if ((fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller)) == kResultTrue) &
 							controller != 0)
 						{
-							if (component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue &
+							if ((component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) &
 								controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue)
 							{
 								cm->connect(cnt);
@@ -88,7 +87,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					{
 						controller->initialize(host);
 					}
-				}
+				} else { LEAVE_(true) }
 			}
 			catch (...)
 			{

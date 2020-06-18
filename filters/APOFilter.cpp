@@ -31,120 +31,105 @@ const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 			  if ((mem) != NULL)  \
 				{ CoTaskMemFree(mem); }
 
-APOFilter::APOFilter(GUID efguid,FilterEngine* e)
-	:_effectguid(efguid),_eapo(e) {}
+APOFilter::APOFilter(GUID efguid, FilterEngine* e)
+	:_effectguid(efguid), _eapo(e) {}
 
-bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, GUID AudioProcessingMode,bool InitializeForDiscoveryOnly,int __MIDL___MIDL_itf_audioengineendpoint_0000_0000_0001, APOInitSystemEffects2* initstruct)
+bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, GUID AudioProcessingMode, bool InitializeForDiscoveryOnly, APOInitSystemEffects2* initstruct)
 {
-	(int) (__MIDL___MIDL_itf_audioengineendpoint_0000_0000_0001);
-
 	HRESULT hr = 0;
-	int fault = 0;
-
+	
 #ifndef _IPROP_FX_INTERNAL
 	IMMEndpointInternal* pInternal = NULL;
 #endif
 
-	if (initstruct != 0 | clsid != GUID_NULL)
-	{
-			memset(initstruct, 0, sizeof(APOInitSystemEffects2));
+	if (initstruct == 0 || clsid == GUID_NULL)
+		return true;
 
-			hr = aDev->OpenPropertyStore(
-				STGM_READ, & pProps);
+		memset(initstruct, 0, sizeof(APOInitSystemEffects2));
+
+		hr = aDev->OpenPropertyStore(
+			STGM_READ, &pProps);
 
 #ifndef _IPROP_FX_INTERNAL
 
-			if (!FAILED(hr) || pProps)
+		if (!FAILED(hr) || pProps)
+		{
+			hr = aDev->QueryInterface(IID_IMMEndpointInternal, reinterpret_cast<void**> (&pInternal)); //Windows 10 October 2018 update
+			if (FAILED(hr))
 			{
-				hr = aDev->QueryInterface(IID_IMMEndpointInternal,reinterpret_cast<void**> (& pInternal)); //Windows 10 October 2018 update
+				hr = aDev->QueryInterface(IID_IMMEndpointInternal2, reinterpret_cast<void**> (&pInternal)); //Windows 7
 				if (FAILED(hr))
 				{
-					hr = aDev->QueryInterface(IID_IMMEndpointInternal2,reinterpret_cast<void**> (& pInternal)); //Windows 7
-					if (FAILED(hr))
-					{
-						hr = aDev->QueryInterface(IID_IMMEndpointInternal3, reinterpret_cast<void**> (& pInternal)); //Windows 10 may 2019 update
-					}
+					hr = aDev->QueryInterface(IID_IMMEndpointInternal3, reinterpret_cast<void**> (&pInternal)); //Windows 10 may 2019 update
 				}
+			}
 
-				if (pInternal == NULL)
-					return true;
+			if (pInternal == NULL)
+				return true;
 #endif
-				if (!FAILED(hr) || pProps)
-				{
-					//Get apo settings
+			if ((!FAILED(hr)) || pProps)
+			{
+				//Get apo settings
 
 #ifdef _IPROP_FX_INTERNAL
 
-					try
-					{
-						void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
-						if (hlp != 0) {
-							fxprop = new(hlp) IPropertyStoreFX((this->_eapo)->getDeviceGuid(), KEY_READ);
-							if (fxprop->TryOpenPropertyStoreRegKey(0) != S_OK)
-								fault = 1;
+				try
+				{
+					void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
+					if (hlp != 0) {
+						fxprop = new(hlp) IPropertyStoreFX((this->_eapo)->getDeviceGuid(), KEY_READ);
+						if (fxprop->TryOpenPropertyStoreRegKey() != S_OK)
+						{
+							TraceF(L"This audio device does not contain FxProperties section in registry");
 						}
 					}
-					catch (...)
-					{
-						fault = 1;
-						TraceF(L"fxprop->TryOpenPropertyStoreRegKey(); failed!");
-					}
+				}
+				catch (...)
+				{
+					TraceF(L"fxprop->TryOpenPropertyStoreRegKey(); failed!");
+				}
 #else
-					try
-					{
-						hr = (this->pInternal)->TryOpenFXPropertyStore(false, & (this->fxprop));
-						if (FAILED(hr)) { TraceF(L"pInternal->TryOpenFXPropertyStore failed! <0x%08llx>", hr); return true; }
-					}
-					catch (...)
-					{
-						fault = 1;
-						TraceF(L"pInternal->TryOpenFXPropertyStore crashed")
-					}
+				try
+				{
+					hr = (this->pInternal)->TryOpenFXPropertyStore(false, &(this->fxprop));
+					if (FAILED(hr)) { TraceF(L"pInternal->TryOpenFXPropertyStore failed! <0x%08llx>", hr); return true; }
+				}
+				catch (...)
+				{
+					TraceF(L"pInternal->TryOpenFXPropertyStore crashed")
+				}
 #endif
-					initstruct->APOInit.cbSize = sizeof(APOInitSystemEffects);
-					initstruct->APOInit.clsid = clsid;
+				initstruct->APOInit.cbSize = sizeof(APOInitSystemEffects);
+				initstruct->APOInit.clsid = clsid;
 
-					//IPropertyStore object ! 
-					initstruct->pAPOEndpointProperties = pProps;
+				//IPropertyStore object !
+				initstruct->pAPOEndpointProperties = pProps;
+				initstruct->pAPOSystemEffectsProperties = reinterpret_cast<IPropertyStore*>(fxprop);
 
-					if (fault == 1)
-					{
-						initstruct->pAPOSystemEffectsProperties = pProps;
-					}
-					else
-					{
-						initstruct->pAPOSystemEffectsProperties = reinterpret_cast<IPropertyStore*>(fxprop);
-					}
-					
-					initstruct->pReserved = 0;
+				//IMMDeviceCollection object !
+				initstruct->pDeviceCollection = pCollection;
 
-					//IMMDeviceCollection object !
-					initstruct->pDeviceCollection = pCollection;
+				// only for APOInitSystemEffects2 structure
 
-					// only for APOInitSystemEffects2 structure
-					
-					/* only used for APOInitSystemEffects2
-					initstruct->nSoftwareIoDeviceInCollection = 0;
-					initstruct->nSoftwareIoConnectorIndex = 0;
-					initstruct->AudioProcessingMode = AudioProcessingMode;
-					initstruct->InitializeForDiscoveryOnly = InitializeForDiscoveryOnly;
-					*/
-					
-
+				/* only used for APOInitSystemEffects2
+				initstruct->nSoftwareIoDeviceInCollection = 0;
+				initstruct->nSoftwareIoConnectorIndex = 0;
+				initstruct->AudioProcessingMode = AudioProcessingMode;
+				initstruct->InitializeForDiscoveryOnly = InitializeForDiscoveryOnly;
+				*/
 
 #ifndef _IPROP_FX_INTERNAL
-				}
-				else {
-					TraceF(L"IMMEndpointInternal class not found!"); return true;
-				}
-				SAFE_RELEASE(pInternal);
-#endif
-				return false;
-				}
-			else {
-				TraceF(L"aDev->OpenPropertyStore failed!!!");
 			}
-	}
+			else {
+				TraceF(L"IMMEndpointInternal class not found!"); return true;
+			}
+			SAFE_RELEASE(pInternal);
+#endif
+			return false;
+			}
+		else {
+			TraceF(L"aDev->OpenPropertyStore failed!!!");
+		}
 
 	return true;
 }
@@ -185,7 +170,7 @@ HRESULT APOFilter::IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* o
 				memcpy(fsupported, crf, sizeof(WAVEFORMATEX));
 				*fsupported = fsp;
 			}
-			else hr = 0x8007000E; //error 
+			else hr = 0x8007000E; //error
 		}
 	}
 
@@ -201,24 +186,20 @@ HRESULT APOFilter::IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* o
 
 /*
 namespace Private_ {
-
 	class prv_
 	{
 	public:
-		
+
 		std::shared_ptr<prv_> asd() {
-			
 			return prev;
 		}
 
 		static prv_ GetFace() {
-
 			static Private_::prv_ Object;
 			return Object;
 		}
 
 		void x() {
-
 			vector<APOFilter*> x;
 			vector<APOFilter*>& instance = x;
 
@@ -243,7 +224,6 @@ namespace Private_ {
 
 					//int Frames = (48000 * 24) * channels.size(); bitrate
 
-
 					str->initialize(48000, Frames, channels);
 					str->process(0, 0, 0);
 				}
@@ -256,20 +236,18 @@ namespace Private_ {
 		}
 
 	private:
-
 	};
 }
 */
 
 std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
-
 #define LEAVE_(b)  \
 		 bypass = b; return channelNames;
 
 	HRESULT hr = 0;
 	EDataFlow devicetype = eRender;
-	
+
 	channelCount = channelNames.size();
 
 	if (channelCount == 0) { LEAVE_(true) }
@@ -283,15 +261,15 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	memset(bufferinput, 0, buffersize);
 
 	if (_effectguid == GUID_NULL) { LEAVE_(true) }
-	
+
 	hr = CoCreateInstance(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		reinterpret_cast<void**>(& pEnumerator));
+		reinterpret_cast<void**>(&pEnumerator));
 	if (FAILED(hr) || !pEnumerator)
 	{
 		TraceF(L"MMDeviceEnumerator CoCreateInstance failed!!!"); LEAVE_(true)
-	} 
+	}
 
 	IMMDevice* imd;
 	IMMEndpoint* ime;
@@ -300,7 +278,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	hr = (this->pEnumerator)->GetDevice(fulldevice.c_str(), &imd);
 	if (!FAILED(hr))
 	{
-		imd->QueryInterface(__uuidof(IMMEndpoint),reinterpret_cast<void**> (& ime));
+		imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**> (&ime));
 		ime->GetDataFlow(&devicetype);
 		ime->Release();
 		imd->Release();
@@ -308,157 +286,149 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	hr = (this->pEnumerator)->EnumAudioEndpoints(
 		devicetype, DEVICE_STATE_ACTIVE,
-		& (this->pCollection));
+		&(this->pCollection));
 	if (FAILED(hr) || !pCollection)
 	{
-		TraceF(L"Enum Audio Endpoints failed!!!"); 
+		TraceF(L"Enum Audio Endpoints failed!!!");
 		LEAVE_(true)
 	}
-	
-	hr = (this->pEnumerator)->GetDefaultAudioEndpoint(devicetype, eMultimedia, & pEndpoint);
+
+	hr = (this->pEnumerator)->GetDefaultAudioEndpoint(devicetype, eMultimedia, &pEndpoint);
 	if (FAILED(hr))
 	{
 		TraceF(L"Get GetDefaultAudioEndpout Failed");
 		LEAVE_(true)
 	}
 
-	if (!FillAPOInitSystemEffectsStructure(pEndpoint, _effectguid,__uuidof(0),0,0, & initstruct))
+	if (FillAPOInitSystemEffectsStructure(pEndpoint, _effectguid, __uuidof(0), 0, &initstruct)) { LEAVE_(true) }
+
+	hr = (this->pEndpoint)->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&iAudClient));
+	if (FAILED(hr))
 	{
-
-		hr = (this->pEndpoint)->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0,reinterpret_cast<void**> (& iAudClient));
-		if (FAILED(hr))
-		{
-			TraceF(L"pEndpoint->Activate failed!");
-			LEAVE_(true)
-		}
-
-		hr = (this->iAudClient)->GetMixFormat(&scardformat);
-		if (FAILED(hr))
-		{
-			TraceF(L"iAudClient->GetMixFormat failed!");
-			LEAVE_(true)
-		}
-
-		try
-		{
-			hr = CoCreateInstance(_effectguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject),reinterpret_cast<void**> (&APO));
-			if (FAILED(hr))
-			{
-				TraceF(L"Error in CoCreateInstance for child apo");
-				LEAVE_(true)
-			}
-			else {
-
-				hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectRT),reinterpret_cast<void**> (&APORT));
-				if (FAILED(hr))
-				{
-					TraceF(L"Error in QueryInterface for child apo RT");
-					LEAVE_(true)
-				}
-
-					hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration),reinterpret_cast<void**> (&APOCfg));
-					if (FAILED(hr))
-					{
-						TraceF(L"Error in QueryInterface for child apo configuration");
-						LEAVE_(true)
-					}
-
-						hr = (this->APO)->Initialize(sizeof(APOInitSystemEffects),reinterpret_cast<BYTE*> (&initstruct));
-						if (FAILED(hr))
-						{
-							TraceF(L"Error initialize APO");
-							LEAVE_(true)
-						}
-
-							hr = (this->APO)->GetRegistrationProperties(& APOInfo);
-							if (FAILED(hr))
-							{
-								TraceF(L"APO %s GetRegistrationProperties failed!", APOInfo->szFriendlyName);
-								LEAVE_(true)
-							}
-
-								TraceF(L"APO %s GetRegistrationProperties succ! "
-									" %s Max Input channels %d "
-									" Max Output channels %d "
-									" APO interfaces count %d ", APOInfo->szFriendlyName,
-									APOInfo->szCopyrightInfo,
-									APOInfo->u32MaxInputConnections,
-									APOInfo->u32MaxOutputConnections,
-									APOInfo->u32NumAPOInterfaces);
-
-				TraceF(L"Successfully created APO");
-			}
-		}
-		catch (...)
-		{
-			LEAVE_(true)
-		}
-
-		//setting buffer
-		pIn_.u32BufferFlags = BUFFER_VALID;
-		pIn_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
-		pIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
-
-		pOut_.u32BufferFlags = BUFFER_INVALID;
-		pOut_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
-		pOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
-
-		WORD bits = scardformat->wBitsPerSample;
-
-		WAVEFORMATEX w;
-		w.nChannels = static_cast<WORD>(channelCount);
-		w.nSamplesPerSec = static_cast<DWORD>(sampleRate);
-		w.wBitsPerSample = bits;
-		w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8;
-		w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
-
-		if (bits < 32) {
-			w.wFormatTag = WAVE_FORMAT_PCM;
-		}
-		else { w.wFormatTag = WAVE_FORMAT_IEEE_FLOAT; }
-
-		w.cbSize = 0;
-
-		hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX),& iAudType);
-		if (FAILED(hr) || !iAudType)
-		{
-			TraceF(L"CreateAudioMediaType Error");
-			LEAVE_(true)
-		}
-
-		//Configure input buffer
-		coDeskIn_.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
-		coDeskIn_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-		coDeskIn_.u32MaxFrameCount = maxFrameCount;
-		coDeskIn_.pFormat = iAudType;
-		coDeskIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
-
-		//Configure Out buffer
-		coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
-		coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-		coDeskOut_.u32MaxFrameCount = maxFrameCount;
-		coDeskOut_.pFormat = iAudType;
-		coDeskOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
-
-		try
-		{
-			//put settings to apo
-			hr = (this->APOCfg)->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
-		}
-		catch (...)
-		{
-			LEAVE_(true)
-		}
-		
-		if (FAILED(hr))
-		{
-			TraceF(L"APOCfg->LockForProcess error code <0x%08llx>", hr);
-		}
-
-		LEAVE_(false)
+		TraceF(L"pEndpoint->Activate failed!");
+		LEAVE_(true)
 	}
 
-	LEAVE_(true)
+	hr = (this->iAudClient)->GetMixFormat(&scardformat);
+	if (FAILED(hr))
+	{
+		TraceF(L"iAudClient->GetMixFormat failed!");
+		LEAVE_(true)
+	}
+
+	try
+	{
+		hr = CoCreateInstance(_effectguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&APO));
+		if (FAILED(hr))
+		{
+			TraceF(L"Error in CoCreateInstance for child apo");
+			LEAVE_(true)
+		}
+
+		hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&APORT));
+		if (FAILED(hr))
+		{
+			TraceF(L"Error in QueryInterface for child apo RT");
+			LEAVE_(true)
+		}
+
+		hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&APOCfg));
+		if (FAILED(hr))
+		{
+			TraceF(L"Error in QueryInterface for child apo configuration");
+			LEAVE_(true)
+		}
+
+		hr = (this->APO)->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&initstruct));
+		if (FAILED(hr))
+		{
+			TraceF(L"Error initialize APO");
+			LEAVE_(true)
+		}
+
+		hr = (this->APO)->GetRegistrationProperties(&APOInfo);
+		if (FAILED(hr))
+		{
+			TraceF(L"APO %s GetRegistrationProperties failed!", APOInfo->szFriendlyName);
+			LEAVE_(true)
+		}
+
+		TraceF(L"APO %s GetRegistrationProperties succ! "
+			" %s Max Input channels %d "
+			" Max Output channels %d "
+			" APO interfaces count %d ", 
+			APOInfo->szFriendlyName,
+			APOInfo->szCopyrightInfo,
+			APOInfo->u32MaxInputConnections,
+			APOInfo->u32MaxOutputConnections,
+			APOInfo->u32NumAPOInterfaces);
+
+		TraceF(L"Successfully created APO");
+	}
+	catch (...) { LEAVE_(true) }
+
+	//setting buffer
+	pIn_.u32BufferFlags = BUFFER_VALID;
+	pIn_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
+	pIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
+
+	pOut_.u32BufferFlags = BUFFER_INVALID;
+	pOut_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
+	pOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
+
+	WORD bits = scardformat->wBitsPerSample;
+
+	WAVEFORMATEX w;
+	w.nChannels = static_cast<WORD>(channelCount);
+	w.nSamplesPerSec = static_cast<DWORD>(sampleRate);
+	w.wBitsPerSample = bits;
+	w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8;
+	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
+
+	if (bits < 32) {
+		w.wFormatTag = WAVE_FORMAT_PCM;
+	}
+	else { w.wFormatTag = WAVE_FORMAT_IEEE_FLOAT; }
+
+	w.cbSize = 0;
+
+	hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType);
+	if ((FAILED(hr)) || !iAudType)
+	{
+		TraceF(L"CreateAudioMediaType Error");
+		LEAVE_(true)
+	}
+
+	//Configure input buffer
+	coDeskIn_.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
+	coDeskIn_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+	coDeskIn_.u32MaxFrameCount = maxFrameCount;
+	coDeskIn_.pFormat = iAudType;
+	coDeskIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
+
+	//Configure Out buffer
+	coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
+	coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+	coDeskOut_.u32MaxFrameCount = maxFrameCount;
+	coDeskOut_.pFormat = iAudType;
+	coDeskOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
+
+	try
+	{
+		//put settings to apo
+		hr = (this->APOCfg)->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
+	}
+	catch (...)
+	{
+		LEAVE_(true)
+	}
+
+	if (FAILED(hr))
+	{
+		TraceF(L"APOCfg->LockForProcess error code <0x%08llx>", hr);
+	}
+
+	LEAVE_(false)
 }
 
 #pragma AVRT_CODE_BEGIN
@@ -483,7 +453,7 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 				bf[fc * channelCount] = sampleChannel[fc];
 			}
 		}
-		
+
 		//pInput
 		pIn_.u32ValidFrameCount = frameCount;
 
@@ -492,7 +462,7 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 		pOut_.u32ValidFrameCount = frameCount;
 
 		//chilling buffer
-		APORT->APOProcess(1, &pIn, 1, &pOut); //Process 
+		APORT->APOProcess(1, &pIn, 1, &pOut); //Process
 
 		//Read
 		for (size_t c = 0; c < channelCount; c++)
@@ -536,7 +506,7 @@ APOFilter::~APOFilter()
 			SAFE_RELEASE((pCollection))
 			SAFE_RELEASE((pEndpoint))
 			SAFE_RELEASE((pProps))
-			
+
 #ifndef _IPROP_FX_INTERNAL
 			SAFE_RELEASE((fxprop))
 #endif
@@ -562,5 +532,5 @@ APOFilter::~APOFilter()
 	}
 	catch (...) {
 		TraceF(L"APO Deinitialize failed");
-		}
+	}
 }

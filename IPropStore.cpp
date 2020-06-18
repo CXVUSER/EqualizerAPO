@@ -76,7 +76,6 @@ bool IPropertyStoreFX::IsBadPtr(char* mem, size_t size)
 
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
-
 #define LEAVE_(p)	\
 		LeaveCriticalSection(&cr);	\
 		return p;
@@ -107,7 +106,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		CLSID cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if (!FAILED(CLSIDFromString((this->_guid).c_str(), &cl)) |
+		if ((!FAILED(CLSIDFromString((this->_guid).c_str(), &cl))) |
 			!FAILED(StringFromCLSID(cl, &gd)))
 		{
 			pv->vt = VT_LPWSTR;
@@ -161,21 +160,21 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LEAVE_(E_FAIL)
 	}
 
-		if (type == REG_SZ)
-		{
-			DWORD sdata = size;
+	if (type == REG_SZ)
+	{
+		DWORD sdata = size;
 
-			wchar_t* x = reinterpret_cast<wchar_t*>(CoTaskMemAlloc(size));
+		wchar_t* x = reinterpret_cast<wchar_t*>(CoTaskMemAlloc(size));
 
-			LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
+		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
 
-			if (!status) {
-				pv->vt = VT_LPWSTR;
-				pv->pwszVal = x;
-				hr = S_OK;
-			}
-			LEAVE_(hr)
+		if (!status) {
+			pv->vt = VT_LPWSTR;
+			pv->pwszVal = x;
+			hr = S_OK;
 		}
+		LEAVE_(hr)
+	}
 
 	if (type == REG_DWORD)
 	{
@@ -279,10 +278,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	LEAVE_(hr)
 };
 
-HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
+HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 {
-	(bool*)(result);
-
 	HRESULT hr = S_OK;
 	EDataFlow devicetype = eAll;
 	IMMDeviceEnumerator* enumemator = 0;
@@ -296,7 +293,7 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**> (&enumemator));
-	if (!FAILED(hr) || enumemator)
+	if ((!FAILED(hr)) || enumemator)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -304,9 +301,9 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
 		fulldevice += (this->_guid);
 
 		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
-		if (!FAILED(hr) || imd)
+		if ((!FAILED(hr)) || imd)
 		{
-			if (imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime)) ||
+			if ((imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))) ||
 				ime == 0 || FAILED(ime->GetDataFlow(&devicetype)))
 				return E_FAIL;
 
