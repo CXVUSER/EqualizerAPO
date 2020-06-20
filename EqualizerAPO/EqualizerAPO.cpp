@@ -501,6 +501,8 @@ ULONG EqualizerAPO::NonDelegatingRelease()
 	return refCount;
 }
 
+//IShellPropSheetext class
+//for chaining UI APO libraries see (APOFilter.h)
 IFACEMETHODIMP EqualizerAPO::AddPages(
 	__in LPFNADDPROPSHEETPAGE pfnAddPage,
 	__in LPARAM lParam)
@@ -574,10 +576,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 			}
 
 			if (key == L"Device")
-			{
-				std::size_t found = value.find(eguid);
-				(found != std::wstring::npos ? lock = false : lock = true);
-			}
+				(value.find(eguid) != std::wstring::npos ? lock = false : lock = true);
 
 			if ((!lock) & key == L"APO")
 			{

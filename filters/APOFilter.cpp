@@ -8,7 +8,6 @@
 #include "helpers/StringHelper.h"
 #include "helpers/LogHelper.h"
 #include "APOFilter.h"
-#include <mmdeviceapi.h>
 
 using namespace std;
 
@@ -52,7 +51,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 
 #ifndef _IPROP_FX_INTERNAL
 
-		if (!FAILED(hr) || pProps)
+		if (SUCCEEDED(hr) || pProps != 0)
 		{
 			hr = aDev->QueryInterface(IID_IMMEndpointInternal, reinterpret_cast<void**> (&pInternal)); //Windows 10 October 2018 update
 			if (FAILED(hr))
@@ -67,7 +66,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 			if (pInternal == NULL)
 				return true;
 #endif
-			if ((!FAILED(hr)) || pProps)
+			if ((SUCCEEDED(hr)) || pProps != 0)
 			{
 				//Get apo settings
 
@@ -78,7 +77,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 					void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
 					if (hlp != 0) {
 						fxprop = new(hlp) IPropertyStoreFX((this->_eapo)->getDeviceGuid(), KEY_READ);
-						if (fxprop->TryOpenPropertyStoreRegKey() != S_OK)
+						if (FAILED(fxprop->TryOpenPropertyStoreRegKey()))
 						{
 							TraceF(L"This audio device does not contain FxProperties section in registry");
 						}
@@ -274,9 +273,12 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	IMMDevice* imd;
 	IMMEndpoint* ime;
 	std::wstring fulldevice = L"{0.0.0.00000000}.";
+
+	if (_eapo->getDeviceGuid() == L"") { TraceF(L"Device guid not specified"); LEAVE_(true) }
+
 	fulldevice += _eapo->getDeviceGuid();
 	hr = (this->pEnumerator)->GetDevice(fulldevice.c_str(), &imd);
-	if (!FAILED(hr))
+	if (SUCCEEDED(hr))
 	{
 		imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**> (&ime));
 		ime->GetDataFlow(&devicetype);
@@ -393,7 +395,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	w.cbSize = 0;
 
 	hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType);
-	if ((FAILED(hr)) || !iAudType)
+	if (FAILED(hr) || !iAudType)
 	{
 		TraceF(L"CreateAudioMediaType Error");
 		LEAVE_(true)

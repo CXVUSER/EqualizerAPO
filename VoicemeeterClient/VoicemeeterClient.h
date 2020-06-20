@@ -23,6 +23,8 @@
 #include <vector>
 #include "FilterEngine.h"
 #include "VoicemeeterRemote.h"
+#define INITGUID
+#include <mmdeviceapi.h>
 
 class VoicemeeterClient
 {

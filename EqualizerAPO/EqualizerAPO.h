@@ -71,7 +71,7 @@ public:
 	static const CRegAPOProperties<1> regPreMixProperties;
 
 	//IShellPropSheetext class
-	//for chaining UI APO libraries
+	//for chaining UI APO libraries see (APOFilter.h)
 	virtual IFACEMETHODIMP EqualizerAPO::AddPages(
 		__in LPFNADDPROPSHEETPAGE pfnAddPage,
 		__in LPARAM lParam);

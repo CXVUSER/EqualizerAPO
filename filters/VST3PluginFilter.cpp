@@ -242,7 +242,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		DWORD bufSize = 0;
 		CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
-		BYTE* buf = new BYTE[bufSize];
+		BYTE* buf = reinterpret_cast<BYTE*>(MemoryHelper::alloc(bufSize));
 		if (CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
 		{
 			set.write(buf, bufSize, 0);
@@ -256,7 +256,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				TraceF(L"VST3 setState plugin failed!");
 			}
 		}
-		delete buf;
+		MemoryHelper::free(buf);
 	}
 	else
 	{

@@ -104,7 +104,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LPOLESTR gd = 0;
 
 		if (FAILED(CLSIDFromString((this->_guid).c_str(), &cl))) { LEAVE_(E_FAIL) }
-		if (!FAILED(StringFromCLSID(cl, &gd)))
+		if (SUCCEEDED(StringFromCLSID(cl, &gd)))
 		{
 			pv->vt = VT_LPWSTR;
 			pv->pwszVal = gd;
@@ -228,7 +228,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 			IMalloc* ml;
 			size_t s2 = 0;
 
-			if (!FAILED(CoGetMalloc(true, &ml)))
+			if (SUCCEEDED(CoGetMalloc(true, &ml)))
 			{
 				s2 = ml->GetSize(vm);
 				ml->Release();
@@ -277,14 +277,14 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 
 	EnterCriticalSection(&cr);
 
-	std::wstring regfx = MM_DEV_AUD_REG_PATH;
+	std::wstring regfx = MM_DEV_AUD_REG_PATH; 
 	//std::wstring regprop = MM_DEV_AUD_REG_PATH;
 
 	hr = CoCreateInstance(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**> (&enumemator));
-	if ((!FAILED(hr)) | enumemator != 0)
+	if (SUCCEEDED(hr) | enumemator != 0)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -292,7 +292,7 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 		fulldevice += (this->_guid);
 
 		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
-		if ((!FAILED(hr)) | imd != 0)
+		if (SUCCEEDED(hr) | imd != 0)
 		{
 			if (FAILED(imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))))
 				return E_FAIL;

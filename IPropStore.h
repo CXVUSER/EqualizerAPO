@@ -12,6 +12,7 @@
 #include <audioclient.h>
 #include <propvarutil.h>
 #include <Unknwn.h>
+#include <mmdeviceapi.h>
 #include <Functiondiscoverykeys_devpkey.h>
 
 #include "helpers/RegistryHelper.h"

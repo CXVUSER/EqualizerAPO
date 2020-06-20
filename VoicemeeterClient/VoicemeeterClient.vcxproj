@@ -188,7 +188,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -196,13 +196,15 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalIncludeDirectories>C:\Users\pool312\Desktop\sdkvst\VST3_SDK;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\base\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(OutDir)Common.lib;muparserx.lib;version.lib;Shlwapi.lib;authz.lib;audioeng.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\base.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\pluginterfaces.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\sdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)Common.lib;muparserx.lib;Propsys.lib;version.lib;Shlwapi.lib;authz.lib;audioeng.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;uuid.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\base.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\pluginterfaces.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\sdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NOPT|x64'">
