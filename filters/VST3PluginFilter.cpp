@@ -26,7 +26,10 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	if (channelCount == 0 || _path == L"") { LEAVE_(true) }
 
 	Plugindll = LoadLibraryW(_path.data());
-	if (!Plugindll) { LEAVE_(true) }
+	if (Plugindll != 0) {
+		TraceF(L"Load VST3 plugin: %s", _path.data());
+	}
+	else { LEAVE_(true) }
 
 	//get global functions
 	_InitDll = reinterpret_cast<InitModuleFunc>(GetProcAddress(Plugindll, "InitDll"));
@@ -127,10 +130,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	//pcd.numSamples = 0;
 	pcd.processMode = kRealtime;
 	pcd.symbolicSampleSize = kSample32;
-
-	pcd.inputParameterChanges = paramch;
-	pcd.outputParameterChanges = paramch;
-	pcd.inputEvents = ivent;
 
 	pcd.inputs = &input_;
 	pcd.outputs = &output_;
@@ -420,14 +419,8 @@ VST3PluginFilter::~VST3PluginFilter()
 		if (host)
 			delete host;
 
-		if (paramch)
-			delete paramch;
-
 		//if (hhand)
 		//	delete hhand;
-
-		if (ivent)
-			delete ivent;
 
 		_ExitDll = reinterpret_cast<ExitDll>(GetProcAddress(Plugindll, "ExitDll"));
 		if (_ExitDll) {

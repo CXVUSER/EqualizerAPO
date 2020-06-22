@@ -40,6 +40,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ int nCmdShow)
 {
 	vector<wstring> outputs;
+
+	CoInitialize(0);
 	if (lpCmdLine[0] != 0)
 	{
 		int argc;

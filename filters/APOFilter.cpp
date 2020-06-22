@@ -79,7 +79,9 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 						fxprop = new(hlp) IPropertyStoreFX((this->_eapo)->getDeviceGuid(), KEY_READ);
 						if (FAILED(fxprop->TryOpenPropertyStoreRegKey()))
 						{
-							TraceF(L"This audio device does not contain FxProperties section in registry");
+							TraceF(L"This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
+								(this->_eapo)->getDeviceGuid().data(),
+								(this->_eapo)->getDeviceName().data());
 						}
 					}
 				}
@@ -108,9 +110,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 				//IMMDeviceCollection object !
 				initstruct->pDeviceCollection = pCollection;
 
-				// only for APOInitSystemEffects2 structure
-
-				/* only used for APOInitSystemEffects2
+				/* only for APOInitSystemEffects2 structure
 				initstruct->nSoftwareIoDeviceInCollection = 0;
 				initstruct->nSoftwareIoConnectorIndex = 0;
 				initstruct->AudioProcessingMode = AudioProcessingMode;
@@ -180,62 +180,6 @@ HRESULT APOFilter::IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* o
 	SAFE_RELEASE(oppositef);
 
 	return hr;
-}
-*/
-
-/*
-namespace Private_ {
-	class prv_
-	{
-	public:
-
-		std::shared_ptr<prv_> asd() {
-			return prev;
-		}
-
-		static prv_ GetFace() {
-			static Private_::prv_ Object;
-			return Object;
-		}
-
-		void x() {
-			vector<APOFilter*> x;
-			vector<APOFilter*>& instance = x;
-
-			std::vector<std::wstring> channels;
-
-			std::wstring channelLeft = L"Left";
-			std::wstring channelRight = L"Right";
-
-			channels.push_back(channelLeft);
-			channels.push_back(channelRight);
-
-			CLSID guid;
-
-			if (!FAILED(CLSIDFromString(L"{F87BDE87-3199-4377-B670-ED5B1B0EEC7F}", &guid)));
-			{
-				APOFilter* filt = new APOFilter(guid, 0);
-				x.push_back(filt);
-
-				for (vector<APOFilter*>::iterator it = instance.begin(); it != instance.end(); it++)
-				{
-					APOFilter* str = *it;
-
-					//int Frames = (48000 * 24) * channels.size(); bitrate
-
-					str->initialize(48000, Frames, channels);
-					str->process(0, 0, 0);
-				}
-			}
-
-			for (size_t i = 0; i < 5; i++)
-			{
-				x[i]->~APOFilter();
-			}
-		}
-
-	private:
-	};
 }
 */
 
@@ -355,9 +299,9 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 			LEAVE_(true)
 		}
 
-		TraceF(L"APO %s GetRegistrationProperties succ! "
-			" %s Max Input channels %d "
-			" Max Output channels %d "
+		TraceF(L"Successfully initialized APO Name: %s "
+			"Copyright: %s Max Input cconnections %d "
+			" Max Output connections %d "
 			" APO interfaces count %d ", 
 			APOInfo->szFriendlyName,
 			APOInfo->szCopyrightInfo,
@@ -365,7 +309,6 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 			APOInfo->u32MaxOutputConnections,
 			APOInfo->u32NumAPOInterfaces);
 
-		TraceF(L"Successfully created APO");
 	}
 	catch (...) { LEAVE_(true) }
 
