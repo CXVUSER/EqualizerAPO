@@ -1,8 +1,21 @@
-/**Kirill
-* 24 April 2019
-* IPropertyStore
-* Class for gathering APO properties from registry (APOFilter.h)
-*/
+﻿
+/***
+ *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
+ *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
+ *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
+ *    ▒▓▓▄ ▄██▒ ░ █ █ ▒   ▒██ █░░▓▓█  ░██░  ▒   ██▒▒▓█  ▄ ▒██▀▀█▄
+ *    ▒ ▓███▀ ░▒██▒ ▒██▒   ▒▀█░  ▒▒█████▓ ▒██████▒▒░▒████▒░██▓ ▒██▒
+ *    ░ ░▒ ▒  ░▒▒ ░ ░▓ ░   ░ ▐░  ░▒▓▒ ▒ ▒ ▒ ▒▓▒ ▒ ░░░ ▒░ ░░ ▒▓ ░▒▓░
+ *      ░  ▒   ░░   ░▒ ░   ░ ░░  ░░▒░ ░ ░ ░ ░▒  ░ ░ ░ ░  ░  ░▒ ░ ▒░
+ *    ░         ░    ░       ░░   ░░░ ░ ░ ░  ░  ░     ░     ░░   ░
+ *    ░ ░       ░    ░        ░     ░           ░     ░  ░   ░
+ *    ░                      ░
+ *
+ *
+ *	 IPropertyStore
+ *	 24 April 2019
+ *	 Class for gathering APO properties from registry (APOFilter.h)
+ */
 
 #include "stdafx.h"
 #include "IPropStore.h"
@@ -80,13 +93,20 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LeaveCriticalSection(&cr);	\
 		return p;
 
-#define RET_DEV_STRING(p)	\
-		wchar_t* name = reinterpret_cast<wchar_t*> (CoTaskMemAlloc(240));	\
-		memset(name,0,240); \
-		wcscpy(name, p);	\
-		pv->vt = VT_LPWSTR;	\
-		pv->pwszVal = name;	\
-		LEAVE_(S_OK)
+	auto RET_DEVICE_STRING = [pv](wchar_t* p) {
+		if (p == 0) { 
+			return E_FAIL;
+		}
+		wchar_t* name = reinterpret_cast<wchar_t*> (CoTaskMemAlloc(240));
+		if (name == 0) {
+			return E_OUTOFMEMORY;
+		}
+		memset(name, 0, 240);
+		wcscpy(name, p);
+		pv->vt = VT_LPWSTR;
+		pv->pwszVal = name;
+		return S_OK;
+	};
 
 	EnterCriticalSection(&cr);
 
@@ -118,12 +138,12 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (key == PKEY_DeviceInterface_FriendlyName) //soundcard name
 	{
-		RET_DEV_STRING(L"ESI Juli@")
+		LEAVE_(RET_DEVICE_STRING(L"ESI Juli@"))
 	} //...
 
 	if (key == PKEY_Device_FriendlyName) //interface name
 	{
-		RET_DEV_STRING(L"Speakers (ESI Juli@)")
+		LEAVE_(RET_DEVICE_STRING(L"Speakers (ESI Juli@)"))
 	} //...
 
 	//Convert CLSID to GUID string
@@ -206,7 +226,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
 
 		if (!status) {
-			hr = InitPropVariantFromStringAsVector((PCWSTR)str, pv);
+			hr = InitPropVariantFromStringAsVector(reinterpret_cast<PCWSTR>(str), pv);
 
 			if (FAILED(hr))
 				hr = E_FAIL;
@@ -244,7 +264,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					wchar_t buf[520];
 					memset(buf, 0, 208);
 
-					if (SHLoadIndirectString((PCWSTR)vm, buf, 260, 0) != E_FAIL)
+					if (SHLoadIndirectString(reinterpret_cast<PCWSTR>(vm), buf, 260, 0) != E_FAIL)
 					{
 						pv->vt = VT_LPWSTR; // 0x1F
 						pv->pwszVal = (LPWSTR)buf;
@@ -277,7 +297,7 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 
 	EnterCriticalSection(&cr);
 
-	std::wstring regfx = MM_DEV_AUD_REG_PATH; 
+	std::wstring regfx = MM_DEV_AUD_REG_PATH;
 	//std::wstring regprop = MM_DEV_AUD_REG_PATH;
 
 	hr = CoCreateInstance(
@@ -301,28 +321,21 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 			if (FAILED(ime->GetDataFlow(&devicetype)))
 				return E_FAIL;
 
-			switch (devicetype)
-			{
-			case eRender:
+			if (devicetype == eRender)
 				regfx += L"Render\\" + (this->_guid) + L"\\FxProperties";
 
-				/*
-				regprop += L"Render\\" + (this->_guid) + L"\\Properties";
-				*/
-				break;
-			case eCapture:
+			if (devicetype == eCapture)
 				regfx += L"Capture\\" + (this->_guid) + L"\\FxProperties";
 
-				/*
-				regprop += L"Capture\\" + (this->_guid) + L"\\Properties";
-				*/
-				break;
-			case eAll:
-				hr = E_FAIL;
-				break;
-			default:
-				break;
-			}
+			if (devicetype == eAll)
+				return E_FAIL;
+			/*
+			regprop += L"Render\\" + (this->_guid) + L"\\Properties";
+			*/
+
+			/*
+			regprop += L"Capture\\" + (this->_guid) + L"\\Properties";
+			*/
 
 			ime->Release();
 			imd->Release();

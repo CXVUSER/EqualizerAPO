@@ -1,8 +1,21 @@
-/**Kirill
-* 24 April 2019
-* APOFilter
-* Class for chaining APO lib's
-*/
+﻿
+/***
+ *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
+ *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
+ *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
+ *    ▒▓▓▄ ▄██▒ ░ █ █ ▒   ▒██ █░░▓▓█  ░██░  ▒   ██▒▒▓█  ▄ ▒██▀▀█▄
+ *    ▒ ▓███▀ ░▒██▒ ▒██▒   ▒▀█░  ▒▒█████▓ ▒██████▒▒░▒████▒░██▓ ▒██▒
+ *    ░ ░▒ ▒  ░▒▒ ░ ░▓ ░   ░ ▐░  ░▒▓▒ ▒ ▒ ▒ ▒▓▒ ▒ ░░░ ▒░ ░░ ▒▓ ░▒▓░
+ *      ░  ▒   ░░   ░▒ ░   ░ ░░  ░░▒░ ░ ░ ░ ░▒  ░ ░ ░ ░  ░  ░▒ ░ ▒░
+ *    ░         ░    ░       ░░   ░░░ ░ ░ ░  ░  ░     ░     ░░   ░
+ *    ░ ░       ░    ░        ░     ░           ░     ░  ░   ░
+ *    ░                      ░
+ *
+ *
+ *	 APOFilter
+ *	 24 April 2019
+ *	 Class for chaining APO lib's
+ */
 
 #include "stdafx.h"
 #include "helpers/StringHelper.h"
@@ -246,7 +259,9 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		LEAVE_(true)
 	}
 
-	if (FillAPOInitSystemEffectsStructure(pEndpoint, _effectguid, __uuidof(0), 0, &initstruct)) { LEAVE_(true) }
+	if (FillAPOInitSystemEffectsStructure(pEndpoint, _effectguid, __uuidof(0), 0, &initstruct)) { 
+		LEAVE_(true)
+	}
 
 	hr = (this->pEndpoint)->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&iAudClient));
 	if (FAILED(hr))
@@ -323,24 +338,20 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	WORD bits = scardformat->wBitsPerSample;
 
-	WAVEFORMATEX w;
+	WAVEFORMATEX w = { 0 };
 	w.nChannels = static_cast<WORD>(channelCount);
 	w.nSamplesPerSec = static_cast<DWORD>(sampleRate);
 	w.wBitsPerSample = bits;
 	w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8;
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
 
-	if (bits < 32) {
-		w.wFormatTag = WAVE_FORMAT_PCM;
-	}
-	else { w.wFormatTag = WAVE_FORMAT_IEEE_FLOAT; }
-
-	w.cbSize = 0;
-
+	bits < 32 ? w.wFormatTag = WAVE_FORMAT_PCM : 
+		w.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+	
 	hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType);
-	if (FAILED(hr) || !iAudType)
+	if (FAILED(hr) || iAudType == 0)
 	{
-		TraceF(L"CreateAudioMediaType Error");
+		TraceF(L"CreateAudioMediaType return <0x%08llx>",hr);
 		LEAVE_(true)
 	}
 

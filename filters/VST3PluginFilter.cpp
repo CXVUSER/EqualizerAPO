@@ -1,6 +1,20 @@
-//Kirill
-// 15 fev 2020
-// VST3 pkugin wrapper
+﻿
+/***
+ *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
+ *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
+ *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
+ *    ▒▓▓▄ ▄██▒ ░ █ █ ▒   ▒██ █░░▓▓█  ░██░  ▒   ██▒▒▓█  ▄ ▒██▀▀█▄
+ *    ▒ ▓███▀ ░▒██▒ ▒██▒   ▒▀█░  ▒▒█████▓ ▒██████▒▒░▒████▒░██▓ ▒██▒
+ *    ░ ░▒ ▒  ░▒▒ ░ ░▓ ░   ░ ▐░  ░▒▓▒ ▒ ▒ ▒ ▒▓▒ ▒ ░░░ ▒░ ░░ ▒▓ ░▒▓░
+ *      ░  ▒   ░░   ░▒ ░   ░ ░░  ░░▒░ ░ ░ ░ ░▒  ░ ░ ░ ░  ░  ░▒ ░ ▒░
+ *    ░         ░    ░       ░░   ░░░ ░ ░ ░  ░  ░     ░     ░░   ░
+ *    ░ ░       ░    ░        ░     ░           ░     ░  ░   ░
+ *    ░                      ░
+ *
+ *
+ *	 VST3 pkugin wrapper
+ *	 15 fev 2020
+ */
 
 #include "stdafx.h"
 #include "helpers/StringHelper.h"
@@ -20,6 +34,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	InitModuleFunc _InitDll = nullptr;
 	GetPluginFactory _GetPluginFactory = nullptr;
+	ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
 
 	channelCount = channelNames.size();
 
@@ -103,7 +118,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	}
 
 	if (component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor)) == kResultFalse &
-		!processor) {
+		processor == 0) {
 		LEAVE_(true)
 	}
 
@@ -134,11 +149,11 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	pcd.inputs = &input_;
 	pcd.outputs = &output_;
 
-	SpeakerArrangement arr[8] = {};
-
 	//setting channels
 	for (size_t i = 0; i < buscountinp; i++)
 	{
+		SpeakerArrangement arr[8] = {};
+
 		switch (channelCount)
 		{
 		case 2:
@@ -188,35 +203,30 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		}
 	}
 
-	ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
-
-	if (input_.numChannels != channelCount) {
-		setup.maxSamplesPerBlock = (maxFrameCount * 2); //2.0 Stereo
-	}
-	else
-	{
-		setup.maxSamplesPerBlock = (maxFrameCount * channelCount); //Multichannel
+	(input_.numChannels != channelCount) ? setup.maxSamplesPerBlock = (maxFrameCount * 2) : 
+		setup.maxSamplesPerBlock = (maxFrameCount * channelCount);
+		
+	if (processor->setupProcessing(setup) == kResultFalse) {
+		LEAVE_(true)
 	}
 
-	processor->setupProcessing(setup);
+	if (component->setActive(true) == kResultFalse) {
+		LEAVE_(true)
+	}
 
-	component->setActive(true);
-	component->setIoMode(kAdvanced);
-	processor->setProcessing(true);
+		component->setIoMode(kAdvanced);
+
+		if (processor->setProcessing(true) == kResultFalse) {
+			LEAVE_(true)
+		}
 
 	for (size_t i = 0; i < buscountinp; i++)
 	{
 		BusInfo inf;
 		component->getBusInfo(kAudio, kInput, i, inf);
 
-		if ((inf.flags & BusInfo::kDefaultActive) == false)
-		{
-			component->activateBus(kAudio, kInput, i, true);
-		}
-		else
-		{
+		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, kInput, i, true) :
 			component->activateBus(kAudio, kInput, i, false);
-		}
 	}
 
 	for (size_t i = 0; i < buscountout; i++)
@@ -224,14 +234,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		BusInfo inf;
 		component->getBusInfo(kAudio, kOutput, i, inf);
 
-		if ((inf.flags & BusInfo::kDefaultActive) == false)
-		{
-			component->activateBus(kAudio, kOutput, i, true);
-		}
-		else
-		{
+		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, kOutput, i, true) :
 			component->activateBus(kAudio, kOutput, i, false);
-		}
 	}
 
 	if (_settings != L"")
@@ -259,7 +263,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	}
 	else
 	{
-		if (!controller) {
+		if (controller == NULL) {
 			LEAVE_(false)
 		}
 
@@ -286,7 +290,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		component->queryInterface(IUnitInfo::iid, reinterpret_cast<void**>(&unit));
 
-		if (unit)
+		if (unit != NULL)
 		{
 			int unitc = unit->getUnitCount();
 
@@ -378,14 +382,14 @@ VST3PluginFilter::~VST3PluginFilter()
 			cnt->disconnect(cm);
 		}
 
-		if (processor)
+		if (processor != 0)
 			processor->setProcessing(false);
 
-		if (component)
+		if (component != 0)
 		{
 			component->setActive(false);
 
-			if (controller)
+			if (controller != 0)
 				controller->terminate();
 
 			component->terminate();
@@ -416,7 +420,7 @@ VST3PluginFilter::~VST3PluginFilter()
 		}
 		*/
 
-		if (host)
+		if (host != 0)
 			delete host;
 
 		//if (hhand)

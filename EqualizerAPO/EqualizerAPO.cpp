@@ -514,8 +514,16 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	bool lock = false;
 	std::wstring cpath = L"";
 
-	LPWSTR eguid = &reinterpret_cast<AudioFXExtensionParams*>(lParam)
-		->pwstrEndpointID[17]; //Soundcard GUID
+	if (pfnAddPage == 0)
+		return E_INVALIDARG;
+
+	if (lParam == 0)
+		return E_INVALIDARG;
+
+	wchar_t* eguid = &reinterpret_cast<AudioFXExtensionParams*>(lParam)->pwstrEndpointID[17]; //Soundcard GUID
+
+	if (reinterpret_cast<wchar_t*>(eguid[0]) == L"")
+		return E_INVALIDARG;
 
 	cpath = RegistryHelper::readValue(APP_REGPATH, L"ConfigPath");
 
@@ -575,8 +583,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 				hr = (this)->AddPages(pfnAddPage, lParam);
 			}
 
-			if (key == L"Device")
-				(value.find(eguid) != std::wstring::npos ? lock = false : lock = true);
+			(key == L"Device") ? (value.find(eguid) != std::wstring::npos ? lock = false : lock = true) : 0;
 
 			if ((!lock) & key == L"APO")
 			{
@@ -586,15 +593,16 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 					wstring key = parts[i];
 					wstring value = parts[i + 1];
 
-					if (key == L"UI") {
+					if (key == L"UI")
+					{
 						try
 						{
 							GUID g;
 							hr = CLSIDFromString(value.c_str(), &g);
-							if (!FAILED(hr))
+							if (SUCCEEDED(hr) & g != GUID_NULL)
 							{
 								hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
-								if (!FAILED(hr))
+								if (SUCCEEDED(hr) & ish != 0)
 								{
 									hr = ish->AddPages(pfnAddPage, lParam);
 									ish->Release();

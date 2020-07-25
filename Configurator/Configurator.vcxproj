@@ -155,6 +155,7 @@
     <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
     <GenerateManifest>false</GenerateManifest>
     <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\build\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NOPT|x64'">
     <LinkIncremental>false</LinkIncremental>

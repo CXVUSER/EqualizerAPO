@@ -1,8 +1,21 @@
-/**Kirill
-* 24 April 2019
-* IPropertyStore 
-* Class for gathering APO properties from registry (APOFilter.h)
-*/
+﻿
+/***
+ *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
+ *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
+ *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
+ *    ▒▓▓▄ ▄██▒ ░ █ █ ▒   ▒██ █░░▓▓█  ░██░  ▒   ██▒▒▓█  ▄ ▒██▀▀█▄
+ *    ▒ ▓███▀ ░▒██▒ ▒██▒   ▒▀█░  ▒▒█████▓ ▒██████▒▒░▒████▒░██▓ ▒██▒
+ *    ░ ░▒ ▒  ░▒▒ ░ ░▓ ░   ░ ▐░  ░▒▓▒ ▒ ▒ ▒ ▒▓▒ ▒ ░░░ ▒░ ░░ ▒▓ ░▒▓░
+ *      ░  ▒   ░░   ░▒ ░   ░ ░░  ░░▒░ ░ ░ ░ ░▒  ░ ░ ░ ░  ░  ░▒ ░ ▒░
+ *    ░         ░    ░       ░░   ░░░ ░ ░ ░  ░  ░     ░     ░░   ░
+ *    ░ ░       ░    ░        ░     ░           ░     ░  ░   ░
+ *    ░                      ░
+ *
+ *
+ *	 IPropertyStore
+ *	 24 April 2019
+ *	 Class for gathering APO properties from registry (APOFilter.h)
+ */
 
 #pragma once
 
@@ -14,7 +27,6 @@
 #include <Unknwn.h>
 #include <mmdeviceapi.h>
 #include <Functiondiscoverykeys_devpkey.h>
-
 #include "helpers/RegistryHelper.h"
 
 #ifndef _IPROP_FX_
@@ -54,6 +66,4 @@ private:
 	std::wstring _guid;
 	CRITICAL_SECTION cr;
 };
-#else
-#error IPropertyStore.h already defined
 #endif
