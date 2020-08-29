@@ -49,7 +49,6 @@
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
-//using namespace VST3::Hosting;
 using namespace VST3;
 using namespace Steinberg::Vst::SpeakerArr;
 
@@ -223,9 +222,15 @@ public:
 
 	//Set current position in the stream
 	virtual tresult PLUGIN_API seek(int64 pos, int32 mode, int64* result = 0) override {
-		mode == kIBSeekSet ? seekbuf = pos : 0;
-		mode == kIBSeekCur ? seekbuf += pos : 0;
-		mode == kIBSeekEnd ? seekbuf = s : 0;
+		if (mode == kIBSeekSet)
+			seekbuf = pos;
+
+		if (mode == kIBSeekCur)
+			seekbuf += pos;
+
+		if (mode == kIBSeekEnd)
+			seekbuf = s;
+
 		result != 0 ? *result = seekbuf : 0;
 
 		return kResultTrue;

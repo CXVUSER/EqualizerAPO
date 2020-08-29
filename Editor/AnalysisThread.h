@@ -20,6 +20,7 @@
 #pragma once
 
 #include <QThread>
+#include <QMutex>
 #include <QWaitCondition>
 #include <fftw3.h>
 
@@ -52,7 +53,7 @@ protected:
 	void run() override;
 
 private:
-	QMutex mutex;
+    QMutex mutex;
 	QWaitCondition condition;
 	bool quit = false;
 

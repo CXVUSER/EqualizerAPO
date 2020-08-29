@@ -62,14 +62,69 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	int classes = fact->countClasses();
 
+	auto fixit = [classes](IPluginFactory* fact, void* paddr) {
+		//custom fixes
+		using namespace VST3::StringConvert;
+
+		DWORD old;
+		int plugin;
+
+		enum plg {
+			drvr141,
+			unknw
+		};
+
+		auto unprotect = [old](void* p, size_t s) {
+			VirtualProtect(p, s, PAGE_EXECUTE_READWRITE, (PDWORD)&old);
+		};
+
+		auto protect = [old](void* p, size_t s) {
+			VirtualProtect(p, s, (DWORD)old, (PDWORD)&old);
+		};
+
+		Steinberg::PClassInfo2 fi;
+		Steinberg::IPluginFactory2* fc;
+		if (fact->queryInterface(Steinberg::IPluginFactory2::iid, reinterpret_cast<void**>(&fc)) == kResultOk) {
+
+			for (size_t i = 0; i < classes; i++)
+			{
+				if (fc->getClassInfo2(i, &fi) == kResultOk) {
+					if (strcmp(fi.category, kVstAudioEffectClass) == 0)
+					{
+						if (strcmp(fi.name,"dearVR pro") == 0)
+						{
+							(strcmp(fi.version,"1.4.1") == 0) ? plugin = drvr141 : unknw;
+						}
+						break;
+					}
+				}
+			}
+		}
+
+		BYTE* adr;
+
+		switch (plugin)
+		{
+		case drvr141:
+			//DearVR PRO 1.4.1
+			adr = (BYTE*)paddr + 0x12BABE1;
+			unprotect(adr, 4);
+			(*(DWORD*)(adr)) = 0x90909090;
+			protect(adr, 4);
+			break;
+		default:
+			break;
+		}	
+	};
+
+	fixit(fact, Plugindll);
+
 	for (size_t i = 0; i < classes; i++)
 	{
 		PClassInfo cl;
 		fact->getClassInfo(i, &cl);
-
-		std::string classname = VST3::StringConvert::convert(cl.category, PClassInfo::kCategorySize);
-
-		if (classname == kVstAudioEffectClass)
+		
+		if (strcmp(cl.category, kVstAudioEffectClass) == 0)
 		{
 			try
 			{
@@ -267,10 +322,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 			LEAVE_(false)
 		}
 
-		//Reset all bypass
 		int pcount = controller->getParameterCount();
-		//ParamID bypassid[10]; //bypass id
-		//int bpcount = 0; //bypass parameter count
 
 		for (size_t i = 0; i < pcount; i++)
 		{
@@ -278,9 +330,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 			int c = 0;
 			controller->getParameterInfo(i, pinfo);
 
-			std::string pname = VST3::StringConvert::convert(pinfo.title, 128);
-
-			if (!pname.find("Bypass", 0))
+			if (wcscmp(pinfo.title,L"Bypass") == 0)
 			{
 				controller->setParamNormalized(pinfo.id, 0);
 			}
@@ -288,44 +338,34 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		IUnitInfo* unit = 0;
 
-		component->queryInterface(IUnitInfo::iid, reinterpret_cast<void**>(&unit));
-
-		if (unit != NULL)
+		if (component->queryInterface(IUnitInfo::iid, reinterpret_cast<void**>(&unit)) == kResultOk)
 		{
-			int unitc = unit->getUnitCount();
-
-			for (size_t i = 0; i < unitc; i++)
+			if (unit != NULL)
 			{
-				UnitInfo inf;
-				unit->getUnitInfo(i, inf);
-				int presets = unit->getProgramListCount();
-
-				for (size_t i = 0; i < presets; i++)
+				for (size_t i = 0; i < unit->getUnitCount(); i++)
 				{
-					ProgramListInfo inf;
-					unit->getProgramListInfo(i, inf);
-
-					for (size_t i = 0; i < inf.programCount; i++)
+					for (size_t i = 0; i < unit->getProgramListCount(); i++)
 					{
-						String128 pn;
-						unit->getProgramName(inf.id, i, pn);
+						ProgramListInfo inf;
+						unit->getProgramListInfo(i, inf);
 
-						std::string pname = VST3::StringConvert::convert(pn, 128);
-
-						if (pname == "Default")
+						for (size_t i = 0; i < inf.programCount; i++)
 						{
-							for (size_t o = 0; o < pcount; o++)
+							String128 pn;
+							unit->getProgramName(inf.id, i, pn);
+
+							if (wcscmp(pn, L"Default") == 0)
 							{
-								ParameterInfo pinfo;
-								int c = 0;
-								controller->getParameterInfo(o, pinfo);
-
-								std::string pname = VST3::StringConvert::convert(pinfo.title, 128);
-
-								if (!pname.find("Program", 0))
+								for (size_t o = 0; o < pcount; o++)
 								{
-									//Reset program parameter to default value
-									controller->setParamNormalized(pinfo.id, i);
+									ParameterInfo pinfo;
+									controller->getParameterInfo(o, pinfo);
+
+									if (wcscmp(pinfo.title, L"Program") == 0)
+									{
+										//Reset program parameter to default value
+										controller->setParamNormalized(pinfo.id, i);
+									}
 								}
 							}
 						}

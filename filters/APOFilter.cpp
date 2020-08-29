@@ -43,7 +43,7 @@ const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 			  if ((mem) != NULL)  \
 				{ CoTaskMemFree(mem); }
 
-APOFilter::APOFilter(GUID efguid, FilterEngine* e)
+APOFilter::APOFilter(GUID efguid, FilterEngine * e)
 	:_effectguid(efguid), _eapo(e) {}
 
 bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, GUID AudioProcessingMode, bool InitializeForDiscoveryOnly, APOInitSystemEffects2* initstruct)
@@ -336,22 +336,20 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	pOut_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
 	pOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
 
-	WORD bits = scardformat->wBitsPerSample;
-
 	WAVEFORMATEX w = { 0 };
 	w.nChannels = static_cast<WORD>(channelCount);
 	w.nSamplesPerSec = static_cast<DWORD>(sampleRate);
-	w.wBitsPerSample = bits;
+	w.wBitsPerSample = scardformat->wBitsPerSample;
 	w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8;
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
 
-	bits < 32 ? w.wFormatTag = WAVE_FORMAT_PCM : 
-		w.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+	w.wFormatTag = scardformat->wBitsPerSample < 32 ? WAVE_FORMAT_PCM :
+		WAVE_FORMAT_IEEE_FLOAT;
 	
 	hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType);
 	if (FAILED(hr) || iAudType == 0)
 	{
-		TraceF(L"CreateAudioMediaType return <0x%08llx>",hr);
+		TraceF(L"CreateAudioMediaType error code <0x%08llx>",hr);
 		LEAVE_(true)
 	}
 
@@ -363,12 +361,9 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	coDeskIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
 
 	//Configure Out buffer
+	coDeskOut_ = coDeskIn_;
 	coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
-	coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-	coDeskOut_.u32MaxFrameCount = maxFrameCount;
-	coDeskOut_.pFormat = iAudType;
-	coDeskOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
-
+	
 	try
 	{
 		//put settings to apo
@@ -402,11 +397,9 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 		//write
 		for (size_t c = 0; c < channelCount; c++)
 		{
-			float* sampleChannel = input[c];
-			float* bf = bufferinput + c;
 			for (unsigned fc = 0; fc < frameCount; fc++)
 			{
-				bf[fc * channelCount] = sampleChannel[fc];
+				((float*)(bufferinput+c))[fc * channelCount] = input[c][fc];
 			}
 		}
 
@@ -423,11 +416,9 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 		//Read
 		for (size_t c = 0; c < channelCount; c++)
 		{
-			float* sampleChannel = output[c];
-			float* bf = bufferoutput + c;
 			for (size_t fc = 0; fc < frameCount; fc++)
 			{
-				sampleChannel[fc] = bf[fc * channelCount];
+				output[c][fc] = ((float*)(bufferoutput+c))[fc * channelCount];
 			}
 		}
 	}

@@ -8,186 +8,12 @@
       <Filter>helpers</Filter>
     </ClInclude>
     <ClInclude Include="VoicemeeterRemote.h" />
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ustring.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\platform\appinit.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\media\audioclient.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\audiohost.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\connectionproxy.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\conststringtable.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\doc.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\eventlist.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\falignpop.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\falignpush.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\fplatform.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\fstrdefs.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ftypes.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\funknown.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\futils.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\fvariant.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\geoconstants.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\hostclasses.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ibstream.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\icloneable.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ierrorcontext.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\media\imediaserver.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\media\iparameterclient.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ipersistent.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ipluginbase.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\istringresult.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\iupdatehandler.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\keycodes.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\media\miditovst.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\module.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\optional.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\parameterchanges.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\pluginbasefwd.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\pluginterfacesupport.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\plugprovider.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\processdata.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\smartpointer.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\stringconvert.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\typesizecheck.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ucolorspec.h">
-      <Filter>vst</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\uid.h">
-      <Filter>vst</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VoicemeeterClient.cpp" />
     <ClCompile Include="..\stdafx.cpp" />
     <ClCompile Include="..\helpers\MemoryHelper.cpp">
       <Filter>helpers</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\media\audioclient.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\audiohost.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\connectionproxy.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\conststringtable.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\coreiids.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\eventlist.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\funknown.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\hostclasses.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\module.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\module_win32.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\parameterchanges.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\pluginterfacesupport.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\plugprovider.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\processdata.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\stringconvert.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\usediids.cpp">
-      <Filter>vst</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\pool312\Desktop\sdkvst\VST3_SDK\pluginterfaces\base\ustring.cpp">
-      <Filter>vst</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -196,9 +22,6 @@
   <ItemGroup>
     <Filter Include="helpers">
       <UniqueIdentifier>{eb32c27d-e4c2-4cad-a72d-b798d4514714}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="vst">
-      <UniqueIdentifier>{4abc694f-583d-4a4d-af11-b6125a602064}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

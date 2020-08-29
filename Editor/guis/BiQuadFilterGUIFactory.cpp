@@ -48,7 +48,10 @@ IFilterGUI* BiQuadFilterGUIFactory::createFilterGUI(QString& command, QString& p
 	if (command.startsWith("Filter"))
 	{
 		BiQuadFilterFactory factory;
-		std::vector<IFilter*> filters = factory.createFilter(L"", command.toStdWString(), parameters.toStdWString());
+
+        std::wstring cmd = command.toStdWString();
+        std::wstring prm = parameters.toStdWString();
+        std::vector<IFilter*> filters = factory.createFilter(L"", cmd, prm);
 		if (!filters.empty())
 		{
 			BiQuadFilter* filter = (BiQuadFilter*)filters[0];

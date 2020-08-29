@@ -120,7 +120,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Mega-Nerd\libsndfile\lib;C:\Program Files\muparserx_v3_0_1\lib64;C:\Program Files\fftw3;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Program Files\Mega-Nerd\libsndfile\lib;H:\TMP\muparserx_v3_0_1\lib64;H:\TMP\fftw64;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\build\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NOPT|x64'">
@@ -218,7 +218,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(OutDir)Common.lib;Propsys.lib;muparserx.lib;audioeng.lib;version.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\base.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\pluginterfaces.lib;C:\Users\pool312\Desktop\sdkvst\VST3_SDK\prj\lib\Release\sdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)Common.lib;Propsys.lib;muparserx.lib;audioeng.lib;version.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;H:\TMP\sdkvst\VST3_SDK\prj\lib\Release\base.lib;H:\TMP\sdkvst\VST3_SDK\prj\lib\Release\pluginterfaces.lib;H:\TMP\sdkvst\VST3_SDK\prj\lib\Release\sdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>EqualizerAPO.def</ModuleDefinitionFile>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
