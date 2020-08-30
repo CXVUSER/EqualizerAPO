@@ -1,5 +1,4 @@
-﻿
-/***
+﻿/***
  *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
  *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
  *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
@@ -25,8 +24,8 @@
 #include "FilterEngine.h"
 #include "..//helpers/RegistryHelper.h"
 
-//#include "public.sdk/source/vst/hosting/hostclasses.h"
-//#include "public.sdk/source/vst/hosting/stringconvert.h"
+ //#include "public.sdk/source/vst/hosting/hostclasses.h"
+ //#include "public.sdk/source/vst/hosting/stringconvert.h"
 #include "pluginterfaces/base/funknown.h"
 //#include "pluginterfaces/gui/iplugview.h"
 //#include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
@@ -149,53 +148,47 @@ public:
 
 	//Read bytes from stream buffer
 	virtual tresult PLUGIN_API read(void* buffer, int32 numBytes, int32* numBytesRead = 0) override {
-		int delta = 0;
-		int num = 0;
+		if (buffer != 0 && numBytes != 0)
+		{
+			char* b = reinterpret_cast<char*>(buffer);
+			int num = 0;
 
-		__try {
-			if (buffer != 0 && numBytes != 0)
-			{
-				char* b = reinterpret_cast<char*>(buffer);
-
+			__try {
 				if (seekbuf < numBytes)
 				{
 					if (numBytes > s)
-					{
-						delta = (numBytes - s);
-						numBytes -= delta;
-					}
+						numBytes -= (numBytes - s);
 
 					memcpy(b, &buf[seekbuf], numBytes);
 					num += numBytes;
 
 					seekbuf += num;
 				}
+				else {
+					return kResultFalse;
+				}
 
 				if (numBytesRead)
 					*numBytesRead = num;
-
-				return kResultTrue;
 			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				return kResultFalse;
+			}
+			return kResultTrue;
 		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			if (numBytesRead)
-				*numBytesRead = 0;
-			return kResultFalse;
-		}
-
 		return kResultFalse;
 	};
 
 	//Write to stream buffer
-	virtual tresult PLUGIN_API write(void* buffer, int32 numBytes, int32* numBytesWritten = 0) override {
-		int num = 0;
-		int size = numBytes + s;
+	virtual tresult PLUGIN_API write(void* buffer, int32 numBytes, int32* numBytesWritten = 0) override {		
+		if (buffer != 0 && numBytes != 0)
+		{
+			int num = 0;
+			int size = numBytes + s;
 
-		__try {
-			if (buffer != 0 && numBytes != 0)
-			{
-				char* b = reinterpret_cast<char*>(buffer);
+			char* b = reinterpret_cast<char*>(buffer);
 
+			__try {
 				buf = reinterpret_cast<char*>(realloc(buf, size));
 				if (buf == NULL)
 					return kResultFalse;
@@ -204,21 +197,16 @@ public:
 
 				s += numBytes;
 				num += numBytes;
-
 				seekbuf += num;
 
 				if (numBytesWritten)
 					*numBytesWritten = num;
-
-				return kResultTrue;
 			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				return kResultFalse;
+			}
+			return kResultTrue;
 		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			if (numBytesWritten)
-				*numBytesWritten = 0;
-			return kResultFalse;
-		}
-
 		return kResultFalse;
 	};
 
@@ -233,24 +221,37 @@ public:
 		if (mode == kIBSeekEnd)
 			seekbuf = s;
 
-		if (result != 0)
-			*result = seekbuf;
-
+		__try {
+			if (result != 0)
+				*result = seekbuf;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			return kResultFalse;
+		}
 		return kResultTrue;
 	};
 
 	virtual tresult PLUGIN_API tell(int64* pos) override {
 		if (pos != 0) {
-			*pos = seekbuf;
+			__try {
+				*pos = seekbuf;
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				return kResultFalse;
+			}
 			return kResultTrue;
 		}
 		return kResultFalse;
 	};
 
 	virtual tresult PLUGIN_API getStreamSize(int64& size) override {
-		int64* sz = &size;
-		if (sz != 0) {
-			size = s;
+		if (&size != 0) {
+			__try {
+				size = s;
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				return kResultFalse;
+			}
 			return kResultTrue;
 		}
 		return kResultFalse;

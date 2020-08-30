@@ -135,7 +135,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 						TUID controlID = { 0 };
 
 						component->getControllerClassId(controlID);
-
 						fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller));
 					}
 
