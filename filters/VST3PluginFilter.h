@@ -231,7 +231,8 @@ public:
 		if (mode == kIBSeekEnd)
 			seekbuf = s;
 
-		result != 0 ? *result = seekbuf : 0;
+		if (result != 0)
+			*result = seekbuf;
 
 		return kResultTrue;
 	};
@@ -301,6 +302,7 @@ private:
 	//Steinberg::Vst::IConnectionPoint* cpr;
 
 	ProcessData pcd = {};
+
 	Steinberg::Vst::ProcessContext cont = {};
 	FUnknown* host = new MyDAW();
 	//hosthandler* hhand = new hosthandler();

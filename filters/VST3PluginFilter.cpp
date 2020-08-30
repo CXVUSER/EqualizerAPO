@@ -64,7 +64,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	auto fixit = [classes](IPluginFactory* fact, void* paddr) {
 		//custom fixes
-		using namespace VST3::StringConvert;
 
 		DWORD old;
 		int plugin;
@@ -131,43 +130,34 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				if ((fact->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component)) == kResultTrue) &
 					component != 0)
 				{
-					if (component->queryInterface(IEditController::iid, reinterpret_cast<void**> (&controller)) != 0)
+					if (component->queryInterface(IEditController::iid, reinterpret_cast<void**> (&controller)) != kResultTrue)
 					{
 						TUID controlID = { 0 };
 
 						component->getControllerClassId(controlID);
 
-						if ((fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller)) == kResultTrue) &
-							controller != 0)
-						{
-							if ((component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) &
-								controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue)
-							{
-								cm->connect(cnt);
-								cnt->connect(cm);
-							}
-
-							//cpr->connect(cm);
-							//cm->connect(cpr);
-
-						//processor->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cpr));
-						}
+						fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller));
 					}
 
-					component->initialize(host);
-
-					if (controller)
-					{
+					if (controller != NULL) {
+						if ((component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) &
+							controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue)
+						{
+							cm->connect(cnt);
+							cnt->connect(cm);
+						}
 						controller->initialize(host);
 					}
-				} else { LEAVE_(true) }
+				} else { 
+					LEAVE_(true)
+				}
+					component->initialize(host);
 			}
 			catch (...)
 			{
 				TraceF(L"VST3: initialize crashed!");
 				LEAVE_(true);
 			}
-
 			break;
 		}
 	}
@@ -188,9 +178,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
 
 	cont.state = ProcessContext::StatesAndFlags::kPlaying;
-
-	cont.timeSigNumerator = 4;
-	cont.timeSigDenominator = 4;
 
 	//pcd = {};
 	pcd.processContext = &cont;
@@ -268,8 +255,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	if (component->setActive(true) == kResultFalse) {
 		LEAVE_(true)
 	}
-
-		component->setIoMode(kAdvanced);
 
 		if (processor->setProcessing(true) == kResultFalse) {
 			LEAVE_(true)
