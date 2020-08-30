@@ -146,12 +146,12 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 							cm->connect(cnt);
 							cnt->connect(cm);
 						}
-						controller->initialize(host);
+						controller->initialize(0);
 					}
 				} else { 
 					LEAVE_(true)
 				}
-					component->initialize(host);
+					component->initialize(0);
 			}
 			catch (...)
 			{
@@ -198,6 +198,9 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		switch (channelCount)
 		{
+		case 1:
+			arr[i] = kMono;
+			break;
 		case 2:
 			arr[i] = kStereo;
 			break;
@@ -384,7 +387,7 @@ void VST3PluginFilter::process(float** output, float** input, unsigned frameCoun
 	{
 		if (reportCrash)
 		{
-			TraceF(L"The APO plugin crashed during audio processing.");
+			TraceF(L"The VST3 plugin crashed during audio processing.");
 			reportCrash = false;
 		}
 
@@ -444,10 +447,10 @@ VST3PluginFilter::~VST3PluginFilter()
 			}
 		}
 		*/
-
+		/*
 		if (host != 0)
 			delete host;
-
+			*/
 		//if (hhand)
 		//	delete hhand;
 

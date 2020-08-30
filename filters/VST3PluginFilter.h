@@ -25,8 +25,8 @@
 #include "FilterEngine.h"
 #include "..//helpers/RegistryHelper.h"
 
-#include "public.sdk/source/vst/hosting/hostclasses.h"
-#include "public.sdk/source/vst/hosting/stringconvert.h"
+//#include "public.sdk/source/vst/hosting/hostclasses.h"
+//#include "public.sdk/source/vst/hosting/stringconvert.h"
 #include "pluginterfaces/base/funknown.h"
 //#include "pluginterfaces/gui/iplugview.h"
 //#include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
@@ -36,7 +36,7 @@
 #include "pluginterfaces/vst/ivstunits.h"
 //#include "pluginterfaces/vst/ivstnoteexpression.h"
 //#include "pluginterfaces/vst/ivstevents.h"
-#include "pluginterfaces/vst/ivsthostapplication.h"
+//#include "pluginterfaces/vst/ivsthostapplication.h"
 //#include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "pluginterfaces/vst/vsttypes.h"
 #include "public.sdk/source/vst/hosting/connectionproxy.h"
@@ -49,9 +49,9 @@
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
-using namespace VST3;
+//using namespace VST3;
 using namespace Steinberg::Vst::SpeakerArr;
-
+/*
 class MyDAW : public IHostApplication
 {
 public:
@@ -118,6 +118,7 @@ protected:
 
 private:
 };
+*/
 
 class settings : public IBStream, ISizeableStream
 {
@@ -125,7 +126,8 @@ public:
 
 	settings() {};
 	~settings() {
-			buf != 0 ? free(buf) : 0;
+		if (buf != 0)
+			free(buf);
 	};
 
 	virtual tresult PLUGIN_API queryInterface(const TUID _iid, void** obj) override {
@@ -246,7 +248,8 @@ public:
 	};
 
 	virtual tresult PLUGIN_API getStreamSize(int64& size) override {
-		if (size != 0) {
+		int64* sz = &size;
+		if (sz != 0) {
 			size = s;
 			return kResultTrue;
 		}
@@ -304,7 +307,7 @@ private:
 	ProcessData pcd = {};
 
 	Steinberg::Vst::ProcessContext cont = {};
-	FUnknown* host = new MyDAW();
+	//FUnknown* host = new MyDAW();
 	//hosthandler* hhand = new hosthandler();
 
 	HMODULE Plugindll;

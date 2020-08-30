@@ -237,12 +237,18 @@
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\media\iparameterclient.h" />
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\samples\vst-hosting\audiohost\source\platform\appinit.h" />
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\connectionproxy.h" />
-    <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\hostclasses.h" />
+    <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\hostclasses.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\optional.h" />
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\parameterchanges.h" />
-    <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\pluginterfacesupport.h" />
+    <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\pluginterfacesupport.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\processdata.h" />
-    <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\stringconvert.h" />
+    <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\stringconvert.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\uid.h" />
     <ClInclude Include="DeviceAPOInfo.h" />
     <ClInclude Include="FilterConfiguration.h" />
@@ -305,9 +311,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AbstractAPOInfo.cpp" />
-    <ClCompile Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\hostclasses.cpp" />
-    <ClCompile Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\pluginterfacesupport.cpp" />
-    <ClCompile Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\stringconvert.cpp" />
+    <ClCompile Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\hostclasses.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\pluginterfacesupport.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\TMP\sdkvst\VST3_SDK\public.sdk\source\vst\hosting\stringconvert.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="DeviceAPOInfo.cpp" />
     <ClCompile Include="FilterConfiguration.cpp" />
     <ClCompile Include="FilterEngine.cpp" />
