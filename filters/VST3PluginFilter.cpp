@@ -144,42 +144,40 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	pcd.outputs = &output_;
 
 	//setting channels
-	for (size_t i = 0; i < buscountinp; i++)
-	{
-		SpeakerArrangement arr[8] = {};
+	SpeakerArrangement arr[1] = {};
 
 		switch (channelCount)
 		{
 		case 1:
-			arr[i] = kMono;
+			arr[0] = kMono;
 			break;
 		case 2:
-			arr[i] = kStereo;
+			arr[0] = kStereo;
 			break;
 		case 4:
-			arr[i] = k40Music;
+			arr[0] = k40Music;
 			break;
 		case 5:
-			arr[i] = k50;
+			arr[0] = k50;
 			break;
 		case 6:
-			arr[i] = k51;
+			arr[0] = k51;
 			break;
 		case 7:
-			arr[i] = k70Music;
+			arr[0] = k70Music;
 			break;
 		case 8:
-			arr[i] = k71Music;
+			arr[0] = k71Music;
 			break;
 		default:
 			break;
 		}
 
-		if (processor->setBusArrangements(arr, buscountinp, 0, 0) != kResultOk)
+		if (processor->setBusArrangements(arr, 1, 0, 0) != kResultOk)
 		{
-			SpeakerArrangement fake[8] = {};
-			fake[i] = kStereo;
-			processor->setBusArrangements(fake, buscountinp, 0, 0);
+			SpeakerArrangement fake[1] = {};
+			fake[0] = kStereo;
+			processor->setBusArrangements(fake, 1, 0, 0);
 			input_.numChannels = 2;
 		}
 		else
@@ -187,18 +185,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 			input_.numChannels = channelCount;
 		}
 
-		if (processor->setBusArrangements(0, 0, arr, buscountout) != kResultOk)
+		if (processor->setBusArrangements(0, 0, arr, 1) != kResultOk)
 		{
-			SpeakerArrangement fake[8] = {};
-			fake[i] = kStereo;
-			processor->setBusArrangements(0, 0, fake, buscountout);
+			SpeakerArrangement fake[1] = {};
+			fake[0] = kStereo;
+			processor->setBusArrangements(0, 0, fake, 1);
 			output_.numChannels = 2;
 		}
 		else
 		{
 			output_.numChannels = channelCount;
 		}
-	}
 
 	(input_.numChannels != channelCount) ? setup.maxSamplesPerBlock = (maxFrameCount * 2) : 
 		setup.maxSamplesPerBlock = (maxFrameCount * channelCount);
