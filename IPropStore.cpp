@@ -109,7 +109,9 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	HRESULT hr = E_FAIL;
 
-	if (pv == 0) { LEAVE_(E_POINTER) }
+	if (pv == 0) { 
+		LEAVE_(E_POINTER)
+	}
 
 	wchar_t keystr[128] = { 0 };
 
@@ -157,16 +159,22 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		key.fmtid.Data4[7],
 		key.pid);
 
-	if (FAILED(hr)) { LEAVE_(E_FAIL) }
+	if (FAILED(hr)) {
+		LEAVE_(E_FAIL)
+	}
 
 	DWORD type = 0;
 	DWORD size = 0;
 
 	LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
 
-	if (status) { LEAVE_(E_FAIL) }
+	if (status) {
+		LEAVE_(E_FAIL)
+	}
 
-	if (type == REG_NONE) { LEAVE_(E_FAIL) }
+	if (type == REG_NONE) {
+		LEAVE_(E_FAIL)
+	}
 
 	if (type == REG_SZ)
 	{

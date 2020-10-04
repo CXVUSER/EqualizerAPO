@@ -132,7 +132,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	fixit(fact, Plugindll);
 	*/
-
+	
 	for (size_t i = 0; i < classes; i++)
 	{
 		PClassInfo cl;

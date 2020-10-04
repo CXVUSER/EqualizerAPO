@@ -487,7 +487,7 @@ APOFilter::~APOFilter()
 			MH_RELEASE((fxprop))
 #endif // !_IPROP_FX_INTERNAL
 
-			CoFreeUnusedLibrariesEx(0, 0);
+			//CoFreeUnusedLibrariesEx(0, 0); //is Unstable
 	}
 	catch (...) {
 		TraceF(L"APO Deinitialize failed");
