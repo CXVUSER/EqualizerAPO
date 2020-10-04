@@ -24,27 +24,17 @@
 #include "FilterEngine.h"
 #include "..//helpers/RegistryHelper.h"
 
- //#include "public.sdk/source/vst/hosting/hostclasses.h"
- //#include "public.sdk/source/vst/hosting/stringconvert.h"
+//VST3_SDK
 #include "pluginterfaces/base/funknown.h"
-//#include "pluginterfaces/gui/iplugview.h"
-//#include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pluginterfaces/vst/ivstunits.h"
-//#include "pluginterfaces/vst/ivstnoteexpression.h"
-//#include "pluginterfaces/vst/ivstevents.h"
-//#include "pluginterfaces/vst/ivsthostapplication.h"
-//#include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "pluginterfaces/vst/vsttypes.h"
 #include "public.sdk/source/vst/hosting/connectionproxy.h"
 #include "pluginterfaces/base/ibstream.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/vst/vstspeaker.h"
-
-//#include <cstdio>
-//#include <iostream>
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
@@ -234,14 +224,11 @@ private:
 	//Conenction
 	Steinberg::Vst::IConnectionPoint* cm;
 	Steinberg::Vst::IConnectionPoint* cnt;
-	//Steinberg::Vst::IConnectionPoint* cpr;
-
+	
 	ProcessData pcd = {};
 
 	Steinberg::Vst::ProcessContext cont = {};
-	//FUnknown* host = new MyDAW();
-	//hosthandler* hhand = new hosthandler();
-
+	
 	HMODULE Plugindll;
 
 	bool bypass = true;

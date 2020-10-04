@@ -69,70 +69,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	if (classes == 0) { 
 		LEAVE_(true)
 	}
-	/*
-	auto fixit = [classes](IPluginFactory* fact, void* paddr) {
-		//custom fixes
 
-		enum plg {
-			drvr141,
-			unknw
-		};
-
-		const char* plug[] =
-		{
-			"dearVR pro",
-			"1.4.1"
-		};
-
-		DWORD old = 0;
-		int plugin = unknw;
-
-		auto unprotect = [old](void* p, size_t s) {
-			VirtualProtect(p, s, PAGE_EXECUTE_READWRITE, (PDWORD)&old);
-		};
-
-		auto protect = [old](void* p, size_t s) {
-			VirtualProtect(p, s, (DWORD)old, (PDWORD)&old);
-		};
-
-		Steinberg::PClassInfo2 fi;
-		Steinberg::IPluginFactory2* fc;
-		if (fact->queryInterface(Steinberg::IPluginFactory2::iid, reinterpret_cast<void**>(&fc)) == kResultOk) {
-
-			for (size_t i = 0; i < classes; i++)
-			{
-				if (fc->getClassInfo2(i, &fi) == kResultOk) {
-					if (strcmp(fi.category, kVstAudioEffectClass) == 0)
-					{
-						for (size_t c = 0; c < (sizeof(plug)/sizeof(plug[0])); c+2)
-						{
-							if (strcmp(fi.name, plug[c]) == 0)
-								(strcmp(fi.version, plug[1+c]) == 0) ? plugin = c : unknw;
-							break;
-						}
-					}
-				}
-			}
-			BYTE* adr = 0;
-
-			switch (plugin)
-			{
-			case drvr141:
-				//DearVR PRO 1.4.1
-				adr = (BYTE*)paddr + 0x12BABE1;
-				unprotect(adr, 4);
-				(*(DWORD*)(adr)) = 0x90909090;
-				protect(adr, 4);
-				break;
-			default:
-				break;
-			}
-		}
-	};
-
-	fixit(fact, Plugindll);
-	*/
-	
 	for (size_t i = 0; i < classes; i++)
 	{
 		PClassInfo cl;
@@ -434,38 +371,7 @@ VST3PluginFilter::~VST3PluginFilter()
 				controller->terminate();
 
 			component->terminate();
-
-			/*
-			while (true)
-			{
-				if (!controller->release())
-					break;
-			}
-			*/
-			/*
-			while (true)
-			{
-				if (component->release() <= 0)
-					break;
-			}
-			*/
 		}
-
-		/*
-		if (fact) {
-			while (true)
-			{
-				if (fact->release() <= 0)
-					break;
-			}
-		}
-		*/
-		/*
-		if (host != 0)
-			delete host;
-			*/
-		//if (hhand)
-		//	delete hhand;
 
 		_ExitDll = reinterpret_cast<ExitDll>(GetProcAddress(Plugindll, "ExitDll"));
 		if (_ExitDll) {
