@@ -1,5 +1,4 @@
-﻿
-/***
+﻿/***
  *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
  *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
  *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
@@ -32,13 +31,11 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 #define LEAVE_(b)  \
 		 bypass = b; return channelNames;
 
-	InitModuleFunc _InitDll = nullptr;
-	GetPluginFactory _GetPluginFactory = nullptr;
 	ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
 
 	channelCount = channelNames.size();
 
-	if (channelCount == 0 || _path == L"") { 
+	if (channelCount == 0 || _path == L"") {
 		LEAVE_(true)
 	}
 
@@ -46,13 +43,14 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	if (Plugindll != 0) {
 		TraceF(L"Load VST3 plugin: %s", _path.data());
 	}
-	else { 
+	else {
 		LEAVE_(true)
 	}
 
 	//get global functions
-	_InitDll = reinterpret_cast<InitModuleFunc>(GetProcAddress(Plugindll, "InitDll"));
-	_GetPluginFactory = reinterpret_cast<GetPluginFactory>(GetProcAddress(Plugindll, "GetPluginFactory"));
+
+	auto _InitDll = func(InitModuleFunc, Plugindll, "InitDll");
+	auto _GetPluginFactory = func(GetPluginFactory, Plugindll, "GetPluginFactory");
 
 	//Initialize Plugin
 
@@ -66,7 +64,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	int classes = fact->countClasses();
 
-	if (classes == 0) { 
+	if (classes == 0) {
 		LEAVE_(true)
 	}
 
@@ -74,7 +72,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	{
 		PClassInfo cl;
 		fact->getClassInfo(i, &cl);
-		
+
 		if (strcmp(cl.category, kVstAudioEffectClass) == 0)
 		{
 			try
@@ -100,10 +98,11 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 						}
 						controller->initialize(0);
 					}
-				} else { 
+				}
+				else {
 					LEAVE_(true)
 				}
-					component->initialize(0);
+				component->initialize(0);
 			}
 			catch (...)
 			{
@@ -146,60 +145,60 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	//setting channels
 	SpeakerArrangement arr[1] = {};
 
-		switch (channelCount)
-		{
-		case 1:
-			arr[0] = kMono;
-			break;
-		case 2:
-			arr[0] = kStereo;
-			break;
-		case 4:
-			arr[0] = k40Music;
-			break;
-		case 5:
-			arr[0] = k50;
-			break;
-		case 6:
-			arr[0] = k51;
-			break;
-		case 7:
-			arr[0] = k70Music;
-			break;
-		case 8:
-			arr[0] = k71Music;
-			break;
-		default:
-			break;
-		}
+	switch (channelCount)
+	{
+	case 1:
+		arr[0] = kMono;
+		break;
+	case 2:
+		arr[0] = kStereo;
+		break;
+	case 4:
+		arr[0] = k40Music;
+		break;
+	case 5:
+		arr[0] = k50;
+		break;
+	case 6:
+		arr[0] = k51;
+		break;
+	case 7:
+		arr[0] = k70Music;
+		break;
+	case 8:
+		arr[0] = k71Music;
+		break;
+	default:
+		break;
+	}
 
-		if (processor->setBusArrangements(arr, 1, 0, 0) != kResultOk)
-		{
-			SpeakerArrangement fake[1] = {};
-			fake[0] = kStereo;
-			processor->setBusArrangements(fake, 1, 0, 0);
-			input_.numChannels = 2;
-		}
-		else
-		{
-			input_.numChannels = channelCount;
-		}
+	if (processor->setBusArrangements(arr, 1, 0, 0) != kResultOk)
+	{
+		SpeakerArrangement fake[1] = {};
+		fake[0] = kStereo;
+		processor->setBusArrangements(fake, 1, 0, 0);
+		input_.numChannels = 2;
+	}
+	else
+	{
+		input_.numChannels = channelCount;
+	}
 
-		if (processor->setBusArrangements(0, 0, arr, 1) != kResultOk)
-		{
-			SpeakerArrangement fake[1] = {};
-			fake[0] = kStereo;
-			processor->setBusArrangements(0, 0, fake, 1);
-			output_.numChannels = 2;
-		}
-		else
-		{
-			output_.numChannels = channelCount;
-		}
+	if (processor->setBusArrangements(0, 0, arr, 1) != kResultOk)
+	{
+		SpeakerArrangement fake[1] = {};
+		fake[0] = kStereo;
+		processor->setBusArrangements(0, 0, fake, 1);
+		output_.numChannels = 2;
+	}
+	else
+	{
+		output_.numChannels = channelCount;
+	}
 
-	(input_.numChannels != channelCount) ? setup.maxSamplesPerBlock = (maxFrameCount * 2) : 
+	(input_.numChannels != channelCount) ? setup.maxSamplesPerBlock = (maxFrameCount * 2) :
 		setup.maxSamplesPerBlock = (maxFrameCount * channelCount);
-		
+
 	if (processor->setupProcessing(setup) == kResultFalse) {
 		LEAVE_(true)
 	}
@@ -250,7 +249,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				TraceF(L"VST3 setState plugin failed!");
 			}
 		}
-		free(buf);
+		if (buf)
+			free(buf);
 	}
 	else
 	{
@@ -266,7 +266,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 			int c = 0;
 			controller->getParameterInfo(i, pinfo);
 
-			if (wcscmp(pinfo.title,L"Bypass") == 0)
+			if (wcscmp(pinfo.title, L"Bypass") == 0)
 			{
 				controller->setParamNormalized(pinfo.id, 0);
 			}
@@ -349,8 +349,6 @@ VST3PluginFilter::~VST3PluginFilter()
 {
 	//Unload plugin
 	try {
-		ExitDll _ExitDll = nullptr;
-
 		if (cm != 0 & cnt != 0)
 		{
 			cm->disconnect(cnt);
@@ -370,7 +368,7 @@ VST3PluginFilter::~VST3PluginFilter()
 			component->terminate();
 		}
 
-		_ExitDll = reinterpret_cast<ExitDll>(GetProcAddress(Plugindll, "ExitDll"));
+		auto _ExitDll = func(ExitDll, Plugindll, "ExitDll");
 		if (_ExitDll) {
 			_ExitDll();
 		}

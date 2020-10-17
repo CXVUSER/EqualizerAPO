@@ -72,6 +72,24 @@ const IID IID_IMMEndpointInternal = __uuidof(IMMEndpointInternal); //Windows 10 
 const IID IID_IMMEndpointInternal2 = { 0xED899CBB,0x5613,0x4541,{0xA7,0x8F,0x66,0x30,0x2F,0x0C,0xE2,0x11} }; //Windows 7
 const IID IID_IMMEndpointInternal3 = { 0xC537EE8D,0x5574,0x454A,{0x93,0x54,0xAA,0xA4,0xE4,0x21,0xD3,0x1E} }; //Windows 10 1909 1903,2004
 
+#define SAFE_RELEASE(punk)  \
+              if ((punk) != NULL)  \
+                { (punk)->Release(); (punk) = NULL; }
+
+#define SAFE_MEM_RELEASE(punk)  \
+              if ((punk) != NULL)  \
+                { delete punk; (punk) = NULL; }
+
+#define MH_RELEASE(mem)  \
+			  if ((mem) != NULL)  \
+				{ MemoryHelper::free(mem); }
+
+#define CM_RELEASE(mem)  \
+			  if ((mem) != NULL)  \
+				{ CoTaskMemFree(mem); }
+
+#define func(T,h,str)	\
+		reinterpret_cast<T>(GetProcAddress(h, str))
 
 #pragma AVRT_VTABLES_BEGIN
 class APOFilter : public IFilter
@@ -90,7 +108,45 @@ private:
 		GUID AudioProcessingMode,
 		bool InitializeForDiscoveryOnly,
 		APOInitSystemEffects2* initstruct);
-	
+
+	/*
+	__declspec(noinline) void nCoCreateInstance(std::wstring* name,const IID& clsid, const IID& riid, void** ppv) {
+		typedef void(*getclass) (_In_ REFCLSID rclsid, _In_ REFIID riid, _Outptr_ LPVOID FAR* ppv);
+		if (name > 0)
+		{
+			if (name->size() > 0) {
+				if (riid == GUID_NULL)
+					return;
+				
+				__try {
+					HMODULE m = LoadLibraryW(name->c_str());
+
+					if (m) {
+						auto f = func(getclass, m, "DllGetClassObject");
+						if (f) {
+							IClassFactory* cl = 0;
+
+							if (f)
+								f(clsid, IID_IClassFactory, reinterpret_cast<LPVOID*> (&cl));
+								{
+									if (cl)
+									{
+										cl->CreateInstance(0, riid, ppv);
+										cl->AddRef();
+									}
+								};
+						}
+					}
+				}
+				__except (EXCEPTION_EXECUTE_HANDLER) {
+					return;
+				}
+			}
+		}
+		return;
+	};
+	*/
+
 	//__declspec(noinline) HRESULT IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* input, WAVEFORMATEX* output,WAVEFORMATEX** fsupported);
 
 	GUID _effectguid = GUID_NULL;

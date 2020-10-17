@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include <memory>
 #include <wincrypt.h>
+//#include <functional>
 #include "FilterEngine.h"
 #include "..//helpers/RegistryHelper.h"
 
@@ -38,8 +39,19 @@
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
-//using namespace VST3;
 using namespace Steinberg::Vst::SpeakerArr;
+
+#define func(T,h,str)	\
+		reinterpret_cast<T>(GetProcAddress(h, str))
+/*
+template <typename ret, typename ...arg> std::function<ret(arg...)> call(HMODULE h,LPCSTR func) {
+	auto addr = GetProcAddress(h, func);
+	typedef ret(*fc)(arg...);
+	fc f = reinterpret_cast<fc>(addr);
+	std::function<ret(arg...)> x = f;
+	return x;
+}
+*/
 
 class settings : public IBStream, ISizeableStream
 {
@@ -102,11 +114,11 @@ public:
 	};
 
 	//Write to stream buffer
-	virtual tresult PLUGIN_API write(void* buffer, int32 numBytes, int32* numBytesWritten = 0) override {		
+	virtual tresult PLUGIN_API write(void* buffer, int32 numBytes, int32* numBytesWritten = 0) override {
 		if (buffer != 0 && numBytes != 0)
 		{
 			int num = 0;
-			
+
 			char* b = reinterpret_cast<char*>(buffer);
 
 			__try {
@@ -224,11 +236,11 @@ private:
 	//Conenction
 	Steinberg::Vst::IConnectionPoint* cm;
 	Steinberg::Vst::IConnectionPoint* cnt;
-	
+
 	ProcessData pcd = {};
 
 	Steinberg::Vst::ProcessContext cont = {};
-	
+
 	HMODULE Plugindll;
 
 	bool bypass = true;

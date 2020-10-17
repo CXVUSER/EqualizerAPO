@@ -217,6 +217,57 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 		if (!status)
 		{
+			auto DeserializePropVarinat = [](int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest)
+			{
+				if (!src)
+					return E_FAIL;
+				if (!cb)
+					return E_FAIL;
+
+				dest->vt = VT_EMPTY;
+
+				if (type == 4)
+				{
+					dest->vt = VT_UI4;
+					dest->lVal = src->lVal;
+					return S_OK;
+				}
+
+				switch (src->vt)
+				{
+				case VT_I1:
+					dest->cVal = src->cVal;
+					break;
+				case VT_I4:
+					dest->lVal = src->lVal;
+					break;
+				case VT_UI1:
+					dest->bVal = src->bVal;
+					break;
+				case VT_BOOL:
+					dest->boolVal = src->boolVal;
+					break;
+				case VT_BSTR:
+				case VT_R4:
+					dest->fltVal = src->fltVal;
+					break;
+				case VT_UI4:
+					dest->ulVal = src->ulVal;
+				case VT_DECIMAL:
+					dest->decVal = src->decVal;
+					break;
+				case VT_EMPTY:
+
+					break;
+				default:
+					break;
+				}
+
+				dest->vt = src->vt;
+
+				return S_OK;
+			};
+
 			HRESULT h = DeserializePropVarinat(REG_BINARY, &pvdata, size, pv);
 			if (!h)
 				hr = S_OK;
@@ -359,54 +410,3 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 
 	return hr;
 }
-
-HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest)
-{
-	if (!src)
-		return E_FAIL;
-	if (!cb)
-		return E_FAIL;
-
-	dest->vt = VT_EMPTY;
-
-	if (type == 4)
-	{
-		dest->vt = VT_UI4;
-		dest->lVal = src->lVal;
-		return S_OK;
-	}
-
-	switch (src->vt)
-	{
-	case VT_I1:
-		dest->cVal = src->cVal;
-		break;
-	case VT_I4:
-		dest->lVal = src->lVal;
-		break;
-	case VT_UI1:
-		dest->bVal = src->bVal;
-		break;
-	case VT_BOOL:
-		dest->boolVal = src->boolVal;
-		break;
-	case VT_BSTR:
-	case VT_R4:
-		dest->fltVal = src->fltVal;
-		break;
-	case VT_UI4:
-		dest->ulVal = src->ulVal;
-	case VT_DECIMAL:
-		dest->decVal = src->decVal;
-		break;
-	case VT_EMPTY:
-
-		break;
-	default:
-		break;
-	}
-
-	dest->vt = src->vt;
-
-	return false;
-};

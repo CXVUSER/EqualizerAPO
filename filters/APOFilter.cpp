@@ -27,22 +27,6 @@ using namespace std;
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 
-#define SAFE_RELEASE(punk)  \
-              if ((punk) != NULL)  \
-                { (punk)->Release(); (punk) = NULL; }
-
-#define SAFE_MEM_RELEASE(punk)  \
-              if ((punk) != NULL)  \
-                { delete punk; (punk) = NULL; }
-
-#define MH_RELEASE(mem)  \
-			  if ((mem) != NULL)  \
-				{ MemoryHelper::free(mem); }
-
-#define CM_RELEASE(mem)  \
-			  if ((mem) != NULL)  \
-				{ CoTaskMemFree(mem); }
-
 APOFilter::APOFilter(GUID efguid, FilterEngine * e)
 	:_effectguid(efguid), _eapo(e) {}
 

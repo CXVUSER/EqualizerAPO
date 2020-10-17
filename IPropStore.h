@@ -54,7 +54,6 @@ public:
 	virtual HRESULT Getvalue(REFPROPERTYKEY key, PROPVARIANT* pv);
 	virtual HRESULT Setvalue() { return E_NOTIMPL; };
 	virtual HRESULT TryOpenPropertyStoreRegKey();
-	HRESULT DeserializePropVarinat(int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest);
 	//__declspec(noinline) static bool IsBadPtr(char* mem, size_t size);
 private:
 
