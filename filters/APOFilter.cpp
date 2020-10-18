@@ -206,7 +206,9 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	channelCount = channelNames.size();
 
-	if (channelCount == 0) { LEAVE_(true) }
+	if (channelCount == 0) {
+		LEAVE_(true)
+	}
 
 	size_t buffersize = (maxFrameCount * channelCount) * sizeof(float);
 
@@ -231,7 +233,10 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	IMMEndpoint* ime;
 	std::wstring fulldevice = L"{0.0.0.00000000}.";
 
-	if (_eapo->getDeviceGuid() == L"") { TraceF(L"Device guid not specified"); LEAVE_(true) }
+	if (_eapo->getDeviceGuid() == L"") { 
+		TraceF(L"Device guid not specified"); 
+		LEAVE_(true) 
+	}
 
 	fulldevice += _eapo->getDeviceGuid();
 	hr = (this->pEnumerator)->GetDevice(fulldevice.c_str(), &imd);
@@ -325,7 +330,9 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 			APOInfo->u32NumAPOInterfaces);
 
 	}
-	catch (...) { LEAVE_(true) }
+	catch (...) {
+		LEAVE_(true)
+	}
 
 	//setting buffer
 	pIn_.u32BufferFlags = BUFFER_VALID;
@@ -361,9 +368,12 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	coDeskIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
 
 	//Configure Out buffer
-	coDeskOut_ = coDeskIn_;
 	coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
-	
+	coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+	coDeskOut_.u32MaxFrameCount = maxFrameCount;
+	coDeskOut_.pFormat = iAudType;
+	coDeskOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
+
 	try
 	{
 		//put settings to apo
@@ -460,11 +470,13 @@ APOFilter::~APOFilter()
 
 			if ((bypass) == false)
 			{
-				if ((APOCfg) != 0)
+				if ((APOCfg) != 0) {
 					(APOCfg)->UnlockForProcess();
+				}
 
-				if ((APO) != 0)
+				if ((APO) != 0) {
 					(APO)->Reset();
+				}
 			}
 
 		SAFE_RELEASE((APOCfg))
