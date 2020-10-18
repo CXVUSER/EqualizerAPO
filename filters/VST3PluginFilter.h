@@ -50,74 +50,6 @@ using namespace Steinberg;
 using namespace Steinberg::Vst;
 //using namespace VST3;
 using namespace Steinberg::Vst::SpeakerArr;
-/*
-class MyDAW : public IHostApplication
-{
-public:
-	MyDAW() {
-		FUNKNOWN_CTOR
-
-			mPlugInterfaceSupport = owned(NEW PlugInterfaceSupport);
-	};
-	virtual ~MyDAW() {};
-
-	//--- IHostApplication ---------------
-	tresult PLUGIN_API getName(String128 name) SMTG_OVERRIDE
-	{
-		String str("EqualizerAPO Digital Audio Workstation");
-		str.copyTo16(name, 0, 127);
-		return kResultTrue;
-	};
-
-	tresult PLUGIN_API createInstance(TUID cid, TUID _iid, void** obj) SMTG_OVERRIDE
-	{
-		FUID classID(FUID::fromTUID(cid));
-		FUID interfaceID(FUID::fromTUID(_iid));
-		if (classID == IMessage::iid && interfaceID == IMessage::iid)
-		{
-			*obj = new HostMessage;
-			return kResultTrue;
-		}
-		else if (classID == IAttributeList::iid && interfaceID == IAttributeList::iid)
-		{
-			*obj = new HostAttributeList;
-			return kResultTrue;
-		}
-		*obj = nullptr;
-		return kResultFalse;
-	};
-
-	virtual tresult PLUGIN_API queryInterface(const ::Steinberg::TUID _iid, void** obj) SMTG_OVERRIDE
-	{
-		QUERY_INTERFACE(_iid, obj, FUnknown::iid, IHostApplication)
-			QUERY_INTERFACE(_iid, obj, IHostApplication::iid, IHostApplication)
-
-			if (mPlugInterfaceSupport && mPlugInterfaceSupport->queryInterface(iid, obj) == kResultTrue)
-				return kResultOk;
-
-		*obj = nullptr;
-		return kResultFalse;
-	};
-
-	virtual uint32 PLUGIN_API addRef() SMTG_OVERRIDE
-	{
-		return 1;
-	};
-
-	virtual uint32 PLUGIN_API release() SMTG_OVERRIDE
-	{
-		return 1;
-	};
-
-	PlugInterfaceSupport* getPlugInterfaceSupport() const { return mPlugInterfaceSupport; }
-
-protected:
-	IPtr<PlugInterfaceSupport> mPlugInterfaceSupport;
-	int __funknownRefCount;
-
-private:
-};
-*/
 
 class settings : public IBStream, ISizeableStream
 {
@@ -184,12 +116,11 @@ public:
 		if (buffer != 0 && numBytes != 0)
 		{
 			int num = 0;
-			int size = numBytes + s;
-
+			
 			char* b = reinterpret_cast<char*>(buffer);
 
 			__try {
-				buf = reinterpret_cast<char*>(realloc(buf, size));
+				buf = reinterpret_cast<char*>(realloc(buf, numBytes + s));
 				if (buf == NULL)
 					return kResultFalse;
 

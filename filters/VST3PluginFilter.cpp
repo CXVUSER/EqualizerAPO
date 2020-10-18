@@ -38,13 +38,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	channelCount = channelNames.size();
 
-	if (channelCount == 0 || _path == L"") { LEAVE_(true) }
+	if (channelCount == 0 || _path == L"") { 
+		LEAVE_(true)
+	}
 
 	Plugindll = LoadLibraryW(_path.data());
 	if (Plugindll != 0) {
 		TraceF(L"Load VST3 plugin: %s", _path.data());
 	}
-	else { LEAVE_(true) }
+	else { 
+		LEAVE_(true)
+	}
 
 	//get global functions
 	_InitDll = reinterpret_cast<InitModuleFunc>(GetProcAddress(Plugindll, "InitDll"));
@@ -62,16 +66,26 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	int classes = fact->countClasses();
 
+	if (classes == 0) { 
+		LEAVE_(true)
+	}
+	/*
 	auto fixit = [classes](IPluginFactory* fact, void* paddr) {
 		//custom fixes
-
-		DWORD old;
-		int plugin;
 
 		enum plg {
 			drvr141,
 			unknw
 		};
+
+		const char* plug[] =
+		{
+			"dearVR pro",
+			"1.4.1"
+		};
+
+		DWORD old = 0;
+		int plugin = unknw;
 
 		auto unprotect = [old](void* p, size_t s) {
 			VirtualProtect(p, s, PAGE_EXECUTE_READWRITE, (PDWORD)&old);
@@ -90,33 +104,34 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				if (fc->getClassInfo2(i, &fi) == kResultOk) {
 					if (strcmp(fi.category, kVstAudioEffectClass) == 0)
 					{
-						if (strcmp(fi.name,"dearVR pro") == 0)
+						for (size_t c = 0; c < (sizeof(plug)/sizeof(plug[0])); c+2)
 						{
-							(strcmp(fi.version,"1.4.1") == 0) ? plugin = drvr141 : unknw;
+							if (strcmp(fi.name, plug[c]) == 0)
+								(strcmp(fi.version, plug[1+c]) == 0) ? plugin = c : unknw;
+							break;
 						}
-						break;
 					}
 				}
 			}
+			BYTE* adr = 0;
+
+			switch (plugin)
+			{
+			case drvr141:
+				//DearVR PRO 1.4.1
+				adr = (BYTE*)paddr + 0x12BABE1;
+				unprotect(adr, 4);
+				(*(DWORD*)(adr)) = 0x90909090;
+				protect(adr, 4);
+				break;
+			default:
+				break;
+			}
 		}
-
-		BYTE* adr;
-
-		switch (plugin)
-		{
-		case drvr141:
-			//DearVR PRO 1.4.1
-			adr = (BYTE*)paddr + 0x12BABE1;
-			unprotect(adr, 4);
-			(*(DWORD*)(adr)) = 0x90909090;
-			protect(adr, 4);
-			break;
-		default:
-			break;
-		}	
 	};
 
 	fixit(fact, Plugindll);
+	*/
 
 	for (size_t i = 0; i < classes; i++)
 	{
@@ -139,11 +154,12 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					}
 
 					if (controller != NULL) {
-						if ((component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) &
-							controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue)
-						{
-							cm->connect(cnt);
-							cnt->connect(cm);
+						if ((component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) & cm != NULL) {
+							if ((controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue) & cnt != NULL)
+							{
+								cm->connect(cnt);
+								cnt->connect(cm);
+							}
 						}
 						controller->initialize(0);
 					}
@@ -258,13 +274,13 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		LEAVE_(true)
 	}
 
-		if (processor->setProcessing(true) == kResultFalse) {
-			LEAVE_(true)
-		}
+	if (processor->setProcessing(true) == kResultFalse) {
+		LEAVE_(true)
+	}
 
 	for (size_t i = 0; i < buscountinp; i++)
 	{
-		BusInfo inf;
+		BusInfo inf = { 0 };
 		component->getBusInfo(kAudio, kInput, i, inf);
 
 		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, kInput, i, true) :
@@ -273,21 +289,20 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	for (size_t i = 0; i < buscountout; i++)
 	{
-		BusInfo inf;
+		BusInfo inf = { 0 };
 		component->getBusInfo(kAudio, kOutput, i, inf);
 
 		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, kOutput, i, true) :
 			component->activateBus(kAudio, kOutput, i, false);
 	}
 
-	if (_settings != L"")
+	if (_settings.size() > 0)
 	{
 		settings set;
-		int64 seek;
-
 		DWORD bufSize = 0;
+
 		CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
-		BYTE* buf = reinterpret_cast<BYTE*>(MemoryHelper::alloc(bufSize));
+		BYTE* buf = reinterpret_cast<BYTE*>(malloc(bufSize));
 		if (CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
 		{
 			set.write(buf, bufSize, 0);
@@ -301,7 +316,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				TraceF(L"VST3 setState plugin failed!");
 			}
 		}
-		MemoryHelper::free(buf);
+		free(buf);
 	}
 	else
 	{
@@ -324,7 +339,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		}
 
 		IUnitInfo* unit = 0;
-
 		if (component->queryInterface(IUnitInfo::iid, reinterpret_cast<void**>(&unit)) == kResultOk)
 		{
 			if (unit != NULL)
@@ -333,7 +347,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				{
 					for (size_t i = 0; i < unit->getProgramListCount(); i++)
 					{
-						ProgramListInfo inf;
+						ProgramListInfo inf = { 0 };
 						unit->getProgramListInfo(i, inf);
 
 						for (size_t i = 0; i < inf.programCount; i++)
@@ -345,7 +359,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 							{
 								for (size_t o = 0; o < pcount; o++)
 								{
-									ParameterInfo pinfo;
+									ParameterInfo pinfo = { 0 };
 									controller->getParameterInfo(o, pinfo);
 
 									if (wcscmp(pinfo.title, L"Program") == 0)
