@@ -44,8 +44,8 @@ ULONG IPropertyStoreFX::Release() {
 };
 
 //IPropertyStore
-HRESULT IPropertyStoreFX::Getcount() { return E_FAIL; };
-HRESULT IPropertyStoreFX::Getat() { return E_FAIL; };
+HRESULT IPropertyStoreFX::Getcount() { return E_NOTIMPL; };
+HRESULT IPropertyStoreFX::Getat() { return E_NOTIMPL; };
 
 /*
 #pragma optimize("",off)
@@ -266,7 +266,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 							if (SHLoadIndirectString((PCWSTR)vm, buf, 260, 0) != E_FAIL)
 							{
-								pv->vt = 0x1F; //VT_LPWSTR
+								pv->vt = VT_LPWSTR; // 0x1F
 								pv->pwszVal = (LPWSTR) buf;
 								LeaveCriticalSection(&cr);
 								return S_OK;
@@ -295,7 +295,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	LeaveCriticalSection(&(this->cr));
 	return hr;
 };
-HRESULT IPropertyStoreFX::Setvalue() { return E_FAIL; };
+HRESULT IPropertyStoreFX::Setvalue() { return E_NOTIMPL; };
 
 HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey(bool* result)
 {
