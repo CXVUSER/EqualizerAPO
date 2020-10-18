@@ -92,10 +92,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	HRESULT hr = E_FAIL;
 
-	if (pv == 0)
-	{
-		LEAVE_(E_POINTER)
-	}
+	if (pv == 0) { LEAVE_(E_POINTER) }
 
 	wchar_t keystr[128] = { 0 };
 
@@ -106,8 +103,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		CLSID cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if ((!FAILED(CLSIDFromString((this->_guid).c_str(), &cl))) |
-			!FAILED(StringFromCLSID(cl, &gd)))
+		if (FAILED(CLSIDFromString((this->_guid).c_str(), &cl))) { LEAVE_(E_FAIL) }
+		if (!FAILED(StringFromCLSID(cl, &gd)))
 		{
 			pv->vt = VT_LPWSTR;
 			pv->pwszVal = gd;
@@ -143,22 +140,16 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		key.fmtid.Data4[7],
 		key.pid);
 
-	if (FAILED(hr)) {
-		LEAVE_(E_FAIL)
-	}
+	if (FAILED(hr)) { LEAVE_(E_FAIL) }
 
 	DWORD type = 0;
 	DWORD size = 0;
 
 	LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
 
-	if (status) {
-		LEAVE_(E_FAIL)
-	}
+	if (status) { LEAVE_(E_FAIL) }
 
-	if (type == REG_NONE) {
-		LEAVE_(E_FAIL)
-	}
+	if (type == REG_NONE) { LEAVE_(E_FAIL) }
 
 	if (type == REG_SZ)
 	{
@@ -293,7 +284,7 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**> (&enumemator));
-	if ((!FAILED(hr)) || enumemator)
+	if ((!FAILED(hr)) | enumemator != 0)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -301,10 +292,13 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 		fulldevice += (this->_guid);
 
 		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
-		if ((!FAILED(hr)) || imd)
+		if ((!FAILED(hr)) | imd != 0)
 		{
-			if ((imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))) ||
-				ime == 0 || FAILED(ime->GetDataFlow(&devicetype)))
+			if (FAILED(imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))))
+				return E_FAIL;
+			if (ime == 0)
+				return E_FAIL;
+			if (FAILED(ime->GetDataFlow(&devicetype)))
 				return E_FAIL;
 
 			switch (devicetype)
