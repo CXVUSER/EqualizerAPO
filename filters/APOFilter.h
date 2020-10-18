@@ -1,6 +1,7 @@
 ﻿/**Kirill
 * 24 April 2019
 * APOFilter
+* Class for chaining APO lib's
 */
 #pragma once
 
