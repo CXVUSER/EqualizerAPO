@@ -576,13 +576,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 			if (key == L"Device")
 			{
 				std::size_t found = value.find(eguid);
-				if (found != std::wstring::npos)
-				{
-					lock = false;
-				}
-				else {
-					lock = true;
-				}
+				(found != std::wstring::npos ? lock = false : lock = true);
 			}
 
 			if ((!lock) & key == L"APO")
@@ -598,7 +592,6 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 						{
 							GUID g;
 							hr = CLSIDFromString(value.c_str(), &g);
-
 							if (!FAILED(hr))
 							{
 								hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
