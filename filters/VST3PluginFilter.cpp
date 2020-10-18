@@ -23,7 +23,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	channelCount = channelNames.size();
 
-	if (channelCount == 0 && _path == L"") { LEAVE_(true) }
+	if (channelCount == 0 || _path == L"") { LEAVE_(true) }
 
 	Plugindll = LoadLibraryW(_path.data());
 	if (!Plugindll) { LEAVE_(true) }
@@ -34,7 +34,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	//Initialize Plugin
 
-	if (!_InitDll && !_GetPluginFactory && _InitDll() == 0) {
+	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0) {
 		LEAVE_(true)
 	}
 
@@ -99,7 +99,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		}
 	}
 
-	if (component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor)) == kResultFalse &&
+	if (component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor)) == kResultFalse &
 		!processor) {
 		LEAVE_(true)
 	}
