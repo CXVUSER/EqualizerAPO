@@ -41,7 +41,6 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		if (_InitDll && _GetPluginFactory && _InitDll() != 0) {
 			if (fact = _GetPluginFactory())
 			{
-
 				int classes = fact->countClasses();
 
 				for (size_t i = 0; i < classes; i++)
@@ -116,9 +115,9 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				//cont = {};
 				cont.tempo = 120; //BPM def temp
 				cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
-				cont.state = 0x22f00;//ProcessContext::StatesAndFlags::kPlaying; )));
-				cont.systemTime = 0x5f89150a8880; //80 B8 DA 15 09 5F 00 00 ))));
-				cont.continousTimeSamples = 0x7200; //)));
+				
+				cont.state = ProcessContext::StatesAndFlags::kPlaying;
+				
 				cont.timeSigNumerator = 4;
 				cont.timeSigDenominator = 4;
 
@@ -139,8 +138,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 				pcd.outputs = &output_;
 
 				SpeakerArrangement arr[8] = {};
-				//SpeakerArrangement arrout[8] = {};
-
+				
 				//setting channels
 				for (size_t i = 0; i < buscountinp; i++)
 				{
@@ -190,25 +188,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					else
 					{
 						output_.numChannels = channelCount;
-					}
-					//output_ = {};
-					
+					}		
 				}
 			
-				//arrout[i] = kStereo;
-				//arrout[i] = k40Music;
-				//arrout[i] = k50;
-				//arrout[i] = k51;
-				//arrout[i] = k71CineFullRear;
-
 				ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
 
 				if (input_.numChannels != channelCount) {
-					setup.maxSamplesPerBlock = (maxFrameCount * 2);
+					setup.maxSamplesPerBlock = (maxFrameCount * 2); //2.0 Stereo
 				}
 				else
 				{
-					setup.maxSamplesPerBlock = (maxFrameCount * channelCount);
+					setup.maxSamplesPerBlock = (maxFrameCount * channelCount); //Multichannel
 				}
 				
 				processor->setupProcessing(setup);
@@ -288,26 +278,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 						if (!pname.find("Bypass", 0))
 						{
 							controller->setParamNormalized(pinfo.id, 0);
-							/*
-							bypassid[c] = pinfo.id;
-							c++;
-							bpcount++;
-							*/
 						}
-
-						/*
-							switch (pinfo.flags)
-							{
-							case ParameterInfo::kIsBypass:
-								//Get bypass parameter id
-								bypassid[c] = pinfo.id;
-								c++;
-								bpcount++;
-								break;
-							default:
-								break;
-							}
-						*/
 					}
 
 					IUnitInfo* unit = 0;
