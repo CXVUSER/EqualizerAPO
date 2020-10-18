@@ -58,8 +58,8 @@ public:
 	//__declspec(noinline) static bool IsBadPtr(char* mem, size_t size);
 private:
 
-	long ref;
-	HKEY reg;
+	long ref = 1;
+	HKEY reg = 0;
 	//HKEY regProp;
 	REGSAM _dwAcc;
 	//wchar_t dev[520];

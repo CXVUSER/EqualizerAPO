@@ -23,9 +23,6 @@
 IPropertyStoreFX::IPropertyStoreFX(std::wstring& Device, REGSAM dwAccess)
 	:_guid(Device), _dwAcc(dwAccess)
 {
-	reg = 0;
-	//regProp = 0;
-	ref = 1;
 	InitializeCriticalSection(&cr);
 };
 
