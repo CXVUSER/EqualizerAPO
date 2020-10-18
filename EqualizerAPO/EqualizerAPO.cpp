@@ -608,7 +608,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 												hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
 											if (!FAILED(hr))
 											{
-												hr = ish->AddPages(pfnAddPage, lParam); //Wrap AudioFX UI dll
+												hr = ish->AddPages(pfnAddPage, lParam);
 												ish->Release();
 											}
 										}
