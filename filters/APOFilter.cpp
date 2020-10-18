@@ -1,6 +1,7 @@
 /**Kirill
 * 24 April 2019
 * APOFilter
+* Class for chaining APO lib's
 */
 
 #include "stdafx.h"
@@ -478,10 +479,10 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 		for (size_t c = 0; c < channelCount; c++)
 		{
 			float* sampleChannel = input[c];
-			float* o2 = bufferinput + c;
-			for (unsigned i = 0; i < frameCount; i++)
+			float* bf = bufferinput + c;
+			for (unsigned fc = 0; fc < frameCount; fc++)
 			{
-				o2[i * channelCount] = sampleChannel[i];
+				bf[fc * channelCount] = sampleChannel[fc];
 			}
 		}
 		
@@ -499,10 +500,10 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 		for (size_t c = 0; c < channelCount; c++)
 		{
 			float* sampleChannel = output[c];
-			float* i2 = bufferoutput + c;
-			for (size_t i = 0; i < frameCount; i++)
+			float* bf = bufferoutput + c;
+			for (size_t fc = 0; fc < frameCount; fc++)
 			{
-				sampleChannel[i] = i2[i	* channelCount];
+				sampleChannel[fc] = bf[fc * channelCount];
 			}
 		}
 	}
