@@ -1,6 +1,7 @@
 /**Kirill
 * 24 April 2019
 * IPropertyStore
+* Class for gathering APO properties from registry (APOFilter.h)
 */
 
 #include "stdafx.h"

@@ -1,6 +1,7 @@
 /**Kirill
 * 24 April 2019
-* IPropertyStore
+* IPropertyStore 
+* Class for gathering APO properties from registry (APOFilter.h)
 */
 
 #pragma once
