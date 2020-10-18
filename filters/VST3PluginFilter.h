@@ -261,14 +261,12 @@ public:
 	};
 
 	virtual tresult PLUGIN_API getStreamSize(int64& size) override {
-
 		size = s;
 		return kResultTrue;
 
 	};
 
 	virtual tresult PLUGIN_API setStreamSize(int64 size) override {
-
 		s = size;
 		return kResultTrue;
 	};
