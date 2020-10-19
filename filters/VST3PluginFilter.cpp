@@ -89,8 +89,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 					}
 
 					if (controller != NULL) {
-						if ((component->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) & cm != NULL) {
-							if ((controller->queryInterface(Steinberg::Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue) & cnt != NULL)
+						if ((component->queryInterface(Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) & cm != NULL) {
+							if ((controller->queryInterface(Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue) & cnt != NULL)
 							{
 								cm->connect(cnt);
 								cnt->connect(cm);

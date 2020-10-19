@@ -510,7 +510,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 {
 	IShellPropSheetExt* ish = 0;
 	HANDLE hFile = 0;
-	HRESULT hr = E_FAIL;
+	HRESULT hr = S_OK;
 	bool lock = false;
 	std::wstring cpath = L"";
 
@@ -583,10 +583,11 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 				hr = (this)->AddPages(pfnAddPage, lParam);
 			}
 
-			if (key == L"Device")
-				(value.find(eguid) != std::wstring::npos ? lock = false : lock = true);
+			if (key == L"Device") {
+				lock = (value.find(eguid) != std::wstring::npos ? false : true);
+			}
 
-			if ((!lock) & key == L"APO")
+			if ((lock == false) & key == L"APO")
 			{
 				vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
 				for (unsigned i = 0; i + 1 < parts.size(); i += 2)
@@ -612,7 +613,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 						}
 						catch (...)
 						{
-							TraceF(L" UI library crashed name: %s", value.c_str());
+							TraceF(L"APOUI: UI library crashed name: %s", value.c_str());
 						}
 					}
 				}
