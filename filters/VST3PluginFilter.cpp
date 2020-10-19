@@ -41,7 +41,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	Plugindll = LoadLibraryW(_path.data());
 	if (Plugindll != 0) {
-		TraceF(L"Load VST3 plugin: %s", _path.data());
+		TraceF(L"VST3: Load plugin: %s", _path.data());
 	}
 	else {
 		LEAVE_(true)
@@ -106,7 +106,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 			}
 			catch (...)
 			{
-				TraceF(L"VST3: initialize crashed!");
+				TraceF(L"VST3: initializing plugin crashed!");
 				LEAVE_(true);
 			}
 			break;
@@ -124,18 +124,15 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	processor->setProcessing(false);
 	component->setActive(false);
 
-	//cont = {};
 	cont.tempo = 120; //BPM def temp
 	cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
 
 	cont.state = ProcessContext::StatesAndFlags::kPlaying;
 
-	//pcd = {};
 	pcd.processContext = &cont;
 	pcd.numInputs = buscountinp;
 	pcd.numOutputs = buscountout;
 
-	//pcd.numSamples = 0;
 	pcd.processMode = kRealtime;
 	pcd.symbolicSampleSize = kSample32;
 
@@ -246,7 +243,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 			}
 			catch (...)
 			{
-				TraceF(L"VST3 setState plugin failed!");
+				TraceF(L"VST3: setState plugin failed!");
 			}
 		}
 		if (buf)

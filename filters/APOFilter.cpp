@@ -76,7 +76,7 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 						fxprop = new(hlp) IPropertyStoreFX((this->_eapo)->getDeviceGuid(), KEY_READ);
 						if (FAILED(fxprop->TryOpenPropertyStoreRegKey()))
 						{
-							TraceF(L"This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
+							TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
 								(this->_eapo)->getDeviceGuid().data(),
 								(this->_eapo)->getDeviceName().data());
 						}
@@ -84,17 +84,17 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 				}
 				catch (...)
 				{
-					TraceF(L"fxprop->TryOpenPropertyStoreRegKey(); failed!");
+					TraceF(L"APO: fxprop->TryOpenPropertyStoreRegKey(); failed!");
 				}
 #else
 				try
 				{
 					hr = (this->pInternal)->TryOpenFXPropertyStore(false, &(this->fxprop));
-					if (FAILED(hr)) { TraceF(L"pInternal->TryOpenFXPropertyStore failed! <0x%08llx>", hr); return true; }
+					if (FAILED(hr)) { TraceF(L"APO: pInternal->TryOpenFXPropertyStore failed! <0x%08llx>", hr); return true; }
 				}
 				catch (...)
 				{
-					TraceF(L"pInternal->TryOpenFXPropertyStore crashed")
+					TraceF(L"APO: pInternal->TryOpenFXPropertyStore crashed")
 				}
 #endif
 				initstruct->APOInit.cbSize = sizeof(APOInitSystemEffects);
@@ -117,14 +117,14 @@ bool APOFilter::FillAPOInitSystemEffectsStructure(IMMDevice* aDev, GUID clsid, G
 #ifndef _IPROP_FX_INTERNAL
 			}
 			else {
-				TraceF(L"IMMEndpointInternal class not found!"); return true;
+				TraceF(L"APO: IMMEndpointInternal class not found!"); return true;
 			}
 			SAFE_RELEASE(pInternal);
 #endif
 			return false;
 			}
 		else {
-			TraceF(L"aDev->OpenPropertyStore failed!!!");
+			TraceF(L"APO: aDev->OpenPropertyStore failed!!!");
 		}
 
 	return true;
@@ -210,7 +210,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		reinterpret_cast<void**>(&pEnumerator));
 	if (FAILED(hr) || !pEnumerator)
 	{
-		TraceF(L"MMDeviceEnumerator CoCreateInstance failed!!!"); LEAVE_(true)
+		TraceF(L"APO: MMDeviceEnumerator CoCreateInstance failed!!!"); LEAVE_(true)
 	}
 
 	IMMDevice* imd;
@@ -218,7 +218,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	std::wstring fulldevice = L"{0.0.0.00000000}.";
 
 	if (_eapo->getDeviceGuid() == L"") { 
-		TraceF(L"Device guid not specified"); 
+		TraceF(L"APO: Device guid not specified"); 
 		LEAVE_(true) 
 	}
 
@@ -237,14 +237,14 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		&(this->pCollection));
 	if (FAILED(hr) || !pCollection)
 	{
-		TraceF(L"Enum Audio Endpoints failed!!!");
+		TraceF(L"APO: Enum Audio Endpoints failed!!!");
 		LEAVE_(true)
 	}
 
 	hr = (this->pEnumerator)->GetDefaultAudioEndpoint(devicetype, eMultimedia, &pEndpoint);
 	if (FAILED(hr))
 	{
-		TraceF(L"Get GetDefaultAudioEndpout Failed");
+		TraceF(L"APO: Get GetDefaultAudioEndpout Failed");
 		LEAVE_(true)
 	}
 
@@ -255,14 +255,14 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	hr = (this->pEndpoint)->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&iAudClient));
 	if (FAILED(hr))
 	{
-		TraceF(L"pEndpoint->Activate failed!");
+		TraceF(L"APO: pEndpoint->Activate failed!");
 		LEAVE_(true)
 	}
 
 	hr = (this->iAudClient)->GetMixFormat(&scardformat);
 	if (FAILED(hr))
 	{
-		TraceF(L"iAudClient->GetMixFormat failed!");
+		TraceF(L"APO: iAudClient->GetMixFormat failed!");
 		LEAVE_(true)
 	}
 
@@ -271,39 +271,39 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		hr = CoCreateInstance(_effectguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&APO));
 		if (FAILED(hr))
 		{
-			TraceF(L"Error in CoCreateInstance for child apo");
+			TraceF(L"APO: Error in CoCreateInstance for child apo");
 			LEAVE_(true)
 		}
 
 		hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&APORT));
 		if (FAILED(hr))
 		{
-			TraceF(L"Error in QueryInterface for child apo RT");
+			TraceF(L"APO: Error in QueryInterface for child apo RT");
 			LEAVE_(true)
 		}
 
 		hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&APOCfg));
 		if (FAILED(hr))
 		{
-			TraceF(L"Error in QueryInterface for child apo configuration");
+			TraceF(L"APO: Error in QueryInterface for child apo configuration");
 			LEAVE_(true)
 		}
 
 		hr = (this->APO)->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&initstruct));
 		if (FAILED(hr))
 		{
-			TraceF(L"Error initialize APO");
+			TraceF(L"APO: Error initialize APO");
 			LEAVE_(true)
 		}
 
 		hr = (this->APO)->GetRegistrationProperties(&APOInfo);
 		if (FAILED(hr))
 		{
-			TraceF(L"APO %s GetRegistrationProperties failed!", APOInfo->szFriendlyName);
+			TraceF(L"APO: %s GetRegistrationProperties failed!", APOInfo->szFriendlyName);
 			LEAVE_(true)
 		}
 
-		TraceF(L"Successfully initialized APO Name: %s "
+		TraceF(L"APO: Successfully initialized APO Name: %s "
 			"Copyright: %s Max Input cconnections %d "
 			" Max Output connections %d "
 			" APO interfaces count %d ", 
@@ -340,7 +340,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType);
 	if (FAILED(hr) || iAudType == 0)
 	{
-		TraceF(L"CreateAudioMediaType error code <0x%08llx>",hr);
+		TraceF(L"APO: CreateAudioMediaType error code <0x%08llx>",hr);
 		LEAVE_(true)
 	}
 
@@ -370,7 +370,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	if (FAILED(hr))
 	{
-		TraceF(L"APOCfg->LockForProcess error code <0x%08llx>", hr);
+		TraceF(L"APO: APOCfg->LockForProcess error code <0x%08llx>", hr);
 	}
 
 	LEAVE_(false)
@@ -474,6 +474,6 @@ APOFilter::~APOFilter()
 			//CoFreeUnusedLibrariesEx(0, 0); //is Unstable
 	}
 	catch (...) {
-		TraceF(L"APO Deinitialize failed");
+		TraceF(L"APO: Deinitialize failed");
 	}
 }
