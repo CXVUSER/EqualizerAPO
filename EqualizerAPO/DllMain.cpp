@@ -107,10 +107,6 @@ STDAPI DllRegisterServer()
 		RegistryHelper::createKey(L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\" + apoClsidString + L"\\InprocServer32");
 		RegistryHelper::writeValue(L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\" + apoClsidString + L"\\InprocServer32", L"", filename);
 		RegistryHelper::writeValue(L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\" + apoClsidString + L"\\InprocServer32", L"ThreadingModel", L"Both");
-
-
-
-	
 	}
 	catch (RegistryException e)
 	{
@@ -140,8 +136,6 @@ STDAPI DllUnregisterServer()
 
 		RegistryHelper::deleteKey(L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\" + apoClsidString + L"\\InprocServer32");
 		RegistryHelper::deleteKey(L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\" + apoClsidString);
-	
-
 	}
 	catch (RegistryException e)
 	{

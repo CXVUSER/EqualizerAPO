@@ -37,9 +37,6 @@
 class IPropertyStoreFX : public IUnknown
 {
 public:
-
-	//const IID unknw_gd = { 0x886D8EEB, 0x8CF2, 0x4446, { 0x8D,0x02,0xCD,0xBA,0x1D,0xBD,0xCF,0x99 } };
-
 	//IPropertyStoreFX(const wchar_t* device, REGSAM dwAccess);
 	IPropertyStoreFX::IPropertyStoreFX(std::wstring& Device, REGSAM dwAccess);
 	~IPropertyStoreFX();

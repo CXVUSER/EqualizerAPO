@@ -29,12 +29,7 @@
 #include <memory>
 #include "FilterEngine.h"
 #include "..//helpers/RegistryHelper.h"
-
-#define _IPROP_FX_INTERNAL
-
-#ifdef _IPROP_FX_INTERNAL
 #include "IPropStore.h"
-#endif 
 
 //KS_NODETYPE				{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},0
 
@@ -53,24 +48,6 @@
 // mode MFX   {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},14
 // stream SFX {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},13
 // end EFX	  {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},15
-
-MIDL_INTERFACE("A4566D7A-C8F5-4150-0B7B-4EE7E744FC5C") //IMMEndpointInternal
-IMMEndpointInternal : public IUnknown
-{
-public:
-	virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IsEnabled() = 0;
-	virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE GetInternalState() = 0;
-	virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE TryOpenFXPropertyStore(
-		/* [annotation][in] */
-		_In_  unsigned long wtf,
-		/* [annotation][out] */
-		_Out_  IPropertyStore** IPropertyStore) = 0;
-
-};
-
-const IID IID_IMMEndpointInternal = __uuidof(IMMEndpointInternal); //Windows 10 1809
-const IID IID_IMMEndpointInternal2 = { 0xED899CBB,0x5613,0x4541,{0xA7,0x8F,0x66,0x30,0x2F,0x0C,0xE2,0x11} }; //Windows 7
-const IID IID_IMMEndpointInternal3 = { 0xC537EE8D,0x5574,0x454A,{0x93,0x54,0xAA,0xA4,0xE4,0x21,0xD3,0x1E} }; //Windows 10 1909 1903,2004
 
 #define SAFE_RELEASE(punk)  \
               if ((punk) != NULL)  \
@@ -103,52 +80,7 @@ public:
 	void process(float** output, float** input, unsigned frameCount) override;
 	
 private:
-	__declspec(noinline) bool FillAPOInitSystemEffectsStructure(IMMDevice* aDev,
-		GUID clsid,
-		GUID AudioProcessingMode,
-		bool InitializeForDiscoveryOnly,
-		APOInitSystemEffects2* initstruct);
-
-	/*
-	__declspec(noinline) void nCoCreateInstance(std::wstring* name,const IID& clsid, const IID& riid, void** ppv) {
-		typedef void(*getclass) (_In_ REFCLSID rclsid, _In_ REFIID riid, _Outptr_ LPVOID FAR* ppv);
-		if (name > 0)
-		{
-			if (name->size() > 0) {
-				if (riid == GUID_NULL)
-					return;
-				
-				__try {
-					HMODULE m = LoadLibraryW(name->c_str());
-
-					if (m) {
-						auto f = func(getclass, m, "DllGetClassObject");
-						if (f) {
-							IClassFactory* cl = 0;
-
-							if (f)
-								f(clsid, IID_IClassFactory, reinterpret_cast<LPVOID*> (&cl));
-								{
-									if (cl)
-									{
-										cl->CreateInstance(0, riid, ppv);
-										cl->AddRef();
-									}
-								};
-						}
-					}
-				}
-				__except (EXCEPTION_EXECUTE_HANDLER) {
-					return;
-				}
-			}
-		}
-		return;
-	};
-	*/
-
-	//__declspec(noinline) HRESULT IsAudioFormatSupportedRemote(int audiopolicy, WAVEFORMATEX* input, WAVEFORMATEX* output,WAVEFORMATEX** fsupported);
-
+	
 	GUID _effectguid = GUID_NULL;
 	FilterEngine* _eapo = 0;
 	size_t channelCount = 0;
@@ -174,16 +106,11 @@ private:
 	IMMDevice* pEndpoint = 0;
 	IPropertyStore* pProps = 0;
 
-#ifdef _IPROP_FX_INTERNAL
 	IPropertyStoreFX* fxprop = 0;
-#else
-	IPropertyStore* fxprop = 0;
-#endif
 
 	APO_REG_PROPERTIES* APOInfo = 0;
 	IAudioClient* iAudClient = 0;
-	WAVEFORMATEX* scardformat = 0;
-
+	
 	//AudioSamples buffer
 	float* bufferinput = 0;
 	float* bufferoutput = 0;

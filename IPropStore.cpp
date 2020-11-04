@@ -50,40 +50,6 @@ ULONG IPropertyStoreFX::Release() {
 	return ref;
 };
 
-//IPropertyStore
-
-/*
-#pragma optimize("",off)
-bool IPropertyStoreFX::IsBadPtr(char* mem, size_t size)
-{
-	bool error = false;
-
-	if (mem)
-	{
-		__try
-		{
-			char byte;
-
-			for (size_t i = 0; i < size; i+=4)
-			{
-				byte = mem[i];
-				byte = mem[i+1];
-				byte = mem[i+2];
-				byte = mem[i+3];
-			}
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER)
-		{
-			error = true;
-		}
-	}
-	else { error = true; };
-
-	return error;
-};
-#pragma optimize("",on)
-*/
-
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
 #define LEAVE_(p)	\
