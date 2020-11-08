@@ -18,6 +18,7 @@
 #include "stdafx.h"
 #include "helpers/StringHelper.h"
 #include "helpers/LogHelper.h"
+#include "helpers/ChannelHelper.h"
 #include "VST3PluginFilter.h"
 
 using namespace std;
@@ -137,40 +138,12 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	pcd.outputs = &output_;
 
 	//setting channels
-	SpeakerArrangement arr[1] = {};
+	SpeakerArrangement arr = ChannelHelper::getDefaultChannelMask(channelCount);
+	SpeakerArrangement fake = kStereo;
 
-	switch (channelCount)
+	if (processor->setBusArrangements(&arr, 1, 0, 0) != kResultOk)
 	{
-	case 1:
-		arr[0] = kMono;
-		break;
-	case 2:
-		arr[0] = kStereo;
-		break;
-	case 4:
-		arr[0] = k40Music;
-		break;
-	case 5:
-		arr[0] = k50;
-		break;
-	case 6:
-		arr[0] = k51;
-		break;
-	case 7:
-		arr[0] = k70Music;
-		break;
-	case 8:
-		arr[0] = k71Music;
-		break;
-	default:
-		break;
-	}
-
-	if (processor->setBusArrangements(arr, 1, 0, 0) != kResultOk)
-	{
-		SpeakerArrangement fake[1] = {};
-		fake[0] = kStereo;
-		processor->setBusArrangements(fake, 1, 0, 0);
+		processor->setBusArrangements(&fake, 1, 0, 0);
 		input_.numChannels = 2;
 	}
 	else
@@ -178,11 +151,9 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		input_.numChannels = channelCount;
 	}
 
-	if (processor->setBusArrangements(0, 0, arr, 1) != kResultOk)
+	if (processor->setBusArrangements(0, 0, &arr, 1) != kResultOk)
 	{
-		SpeakerArrangement fake[1] = {};
-		fake[0] = kStereo;
-		processor->setBusArrangements(0, 0, fake, 1);
+		processor->setBusArrangements(0, 0, &fake, 1);
 		output_.numChannels = 2;
 	}
 	else
