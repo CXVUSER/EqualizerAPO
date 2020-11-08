@@ -48,12 +48,10 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	}
 
 	//get global functions
-
 	auto _InitDll = func(InitModuleFunc, Plugindll, "InitDll");
 	auto _GetPluginFactory = func(GetPluginFactory, Plugindll, "GetPluginFactory");
 
 	//Initialize Plugin
-
 	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0) {
 		LEAVE_(true)
 	}
@@ -77,8 +75,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		{
 			try
 			{
-				if ((fact->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component)) == kResultTrue) &
-					component != 0)
+				if ((fact->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component)) == kResultTrue) & component != 0)
 				{
 					if (component->queryInterface(IEditController::iid, reinterpret_cast<void**> (&controller)) != kResultTrue)
 					{
@@ -193,8 +190,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		output_.numChannels = channelCount;
 	}
 
-	(input_.numChannels != channelCount) ? setup.maxSamplesPerBlock = (maxFrameCount * 2) :
-		setup.maxSamplesPerBlock = (maxFrameCount * channelCount);
+	setup.maxSamplesPerBlock = (input_.numChannels != channelCount) ? (maxFrameCount * 2) :
+		(maxFrameCount * channelCount);
 
 	if (processor->setupProcessing(setup) == kResultFalse) {
 		LEAVE_(true)
@@ -274,14 +271,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		{
 			if (unit != NULL)
 			{
-				for (size_t i = 0; i < unit->getUnitCount(); i++)
+				long uc = unit->getUnitCount();
+				for (size_t i = 0; i < uc; i++)
 				{
-					for (size_t i = 0; i < unit->getProgramListCount(); i++)
+					long lc = unit->getProgramListCount();
+					for (size_t i = 0; i < lc; i++)
 					{
 						ProgramListInfo inf = { 0 };
 						unit->getProgramListInfo(i, inf);
 
-						for (size_t i = 0; i < inf.programCount; i++)
+						long lp = inf.programCount;
+						for (size_t i = 0; i < lp; i++)
 						{
 							String128 pn;
 							unit->getProgramName(inf.id, i, pn);

@@ -50,19 +50,19 @@
 // end EFX	  {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},15
 
 #define SAFE_RELEASE(punk)  \
-              if ((punk) != NULL)  \
-                { (punk)->Release(); (punk) = NULL; }
+              if (punk != NULL)  \
+                { punk->Release(); (punk) = NULL; }
 
 #define SAFE_MEM_RELEASE(punk)  \
-              if ((punk) != NULL)  \
+              if (punk != NULL)  \
                 { delete punk; (punk) = NULL; }
 
 #define MH_RELEASE(mem)  \
-			  if ((mem) != NULL)  \
+			  if (mem != NULL)  \
 				{ MemoryHelper::free(mem); }
 
 #define CM_RELEASE(mem)  \
-			  if ((mem) != NULL)  \
+			  if (mem != NULL)  \
 				{ CoTaskMemFree(mem); }
 
 #define func(T,h,str)	\

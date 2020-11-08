@@ -44,7 +44,7 @@ ULONG IPropertyStoreFX::AddRef() {
 
 ULONG IPropertyStoreFX::Release() {
 	if (InterlockedDecrement(&ref) == 1) {
-		(this)->~IPropertyStoreFX();
+		this->~IPropertyStoreFX();
 		return 0;
 	}
 	return ref;
@@ -88,7 +88,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		CLSID cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if (FAILED(CLSIDFromString((this->_guid).c_str(), &cl))) { LEAVE_(E_FAIL) }
+		if (FAILED(CLSIDFromString(_guid.c_str(), &cl))) { LEAVE_(E_FAIL) }
 		if (SUCCEEDED(StringFromCLSID(cl, &gd)))
 		{
 			pv->vt = VT_LPWSTR;
@@ -311,10 +311,10 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	LEAVE_(hr)
 };
 
-HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
+bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 {
 	HRESULT hr = S_OK;
-	EDataFlow devicetype = eAll;
+	EDataFlow devicetype = eRender;
 	IMMDeviceEnumerator* enumemator = 0;
 
 	EnterCriticalSection(&cr);
@@ -322,57 +322,62 @@ HRESULT IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 	std::wstring regfx = MM_DEV_AUD_REG_PATH;
 	//std::wstring regprop = MM_DEV_AUD_REG_PATH;
 
-	hr = CoCreateInstance(
+	if ((SUCCEEDED(CoCreateInstance
+	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		reinterpret_cast<void**> (&enumemator));
-	if (SUCCEEDED(hr) | enumemator != 0)
+		reinterpret_cast<void**> (&enumemator)
+	)
+	)) | enumemator != 0)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
 		std::wstring fulldevice = L"{0.0.0.00000000}.";
-		fulldevice += (this->_guid);
+		fulldevice += _guid;
 
 		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
-		if (SUCCEEDED(hr) | imd != 0)
+		if ((SUCCEEDED(hr)) | imd != 0)
 		{
-			if (FAILED(imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))))
-				return E_FAIL;
-			if (ime == 0)
-				return E_FAIL;
-			if (FAILED(ime->GetDataFlow(&devicetype)))
-				return E_FAIL;
+			if (SUCCEEDED(imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))))
+			{
+				if (ime == 0)
+					return false;
+				if (FAILED(ime->GetDataFlow(&devicetype)))
+					return false;
 
-			if (devicetype == eRender)
-				regfx += L"Render\\" + (this->_guid) + L"\\FxProperties";
+				switch (devicetype)
+				{
+				case eAll:
+					return false;
+				case eRender:
+					regfx += L"Render\\" + _guid + L"\\FxProperties";
+					break;
+				case eCapture:
+					regfx += L"Capture\\" + _guid + L"\\FxProperties";
+					break;
+				default:
+					break;
+				}
 
-			if (devicetype == eCapture)
-				regfx += L"Capture\\" + (this->_guid) + L"\\FxProperties";
-
-			if (devicetype == eAll)
-				return E_FAIL;
-			/*
-			regprop += L"Render\\" + (this->_guid) + L"\\Properties";
-			*/
-
-			/*
-			regprop += L"Capture\\" + (this->_guid) + L"\\Properties";
-			*/
-
+				/*
+				regprop += L"Render\\" + _guid + L"\\Properties";
+				regprop += L"Capture\\" + _guid + L"\\Properties";
+				*/
+			}
 			ime->Release();
 			imd->Release();
+
+			if ((reg = RegistryHelper::openKey(regfx, _dwAcc)))
+				return true;
+
+			/*
+			if (!(regProp = RegistryHelper::openKey(regProp, _dwAcc)))
+				return false;
+			*/
 		}
 	}
 
-	if (!((this->reg) = RegistryHelper::openKey(regfx, (this->_dwAcc))))
-		hr = E_FAIL;
+	LeaveCriticalSection(&cr);
 
-	/*
-	if (!((this->regProp) = RegistryHelper::openKey(regProp, (this->_dwAcc))))
-		hr = E_FAIL;
-	*/
-
-	LeaveCriticalSection(&(this->cr));
-
-	return hr;
+	return false;
 }

@@ -58,21 +58,23 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	bufferinput = reinterpret_cast<float*> (MemoryHelper::alloc(buffersize));
 	memset(bufferinput, 0, buffersize);
 
-	bufferoutput = reinterpret_cast<float*>((unsigned char*)bufferinput + buffersize / 2);
+	bufferoutput = reinterpret_cast<float*>((char*)bufferinput + (buffersize / 2));
 
-	hr = CoCreateInstance(
+	if ((SUCCEEDED(CoCreateInstance
+	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		reinterpret_cast<void**>(&pEnumerator));
-	if (SUCCEEDED(hr) || 0 == pEnumerator)
+		reinterpret_cast<void**>(&pEnumerator)
+	)
+	)) || 0 == pEnumerator)
 	{
-		IMMDevice* imd;
-		IMMEndpoint* ime;
+		IMMDevice* imd = 0;
+		IMMEndpoint* ime = 0;
 		std::wstring fulldevice = L"{0.0.0.00000000}.";
 
 		fulldevice += _eapo->getDeviceGuid();
-		hr = (this->pEnumerator)->GetDevice(fulldevice.c_str(), &imd);
-		if (SUCCEEDED(hr))
+
+		if (SUCCEEDED(pEnumerator->GetDevice(fulldevice.c_str(), &imd)))
 		{
 			imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**> (&ime));
 			ime->GetDataFlow(&devicetype);
@@ -80,18 +82,13 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 			imd->Release();
 		}
 
-		hr = (this->pEnumerator)->EnumAudioEndpoints(
-			devicetype, DEVICE_STATE_ACTIVE,
-			&(this->pCollection));
-		if (SUCCEEDED(hr) || 0 == pCollection)
+		if ((SUCCEEDED(pEnumerator->EnumAudioEndpoints(devicetype, DEVICE_STATE_ACTIVE, &pCollection))) || 0 == pCollection)
 		{
-			hr = (this->pEnumerator)->GetDefaultAudioEndpoint(devicetype, eMultimedia, &pEndpoint);
-			if (SUCCEEDED(hr))
+			if (SUCCEEDED(pEnumerator->GetDefaultAudioEndpoint(devicetype, eMultimedia, &pEndpoint)))
 			{
-				hr = (this->pEndpoint)->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&iAudClient));
-				if (SUCCEEDED(hr))
+				if (SUCCEEDED(pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&iAudClient))))
 				{
-					hr = (this->iAudClient)->GetMixFormat(&sf);
+					hr = iAudClient->GetMixFormat(&sf);
 				}
 			}
 		}	
@@ -100,50 +97,42 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	//Initialize
 	try
 	{
-		hr = CoCreateInstance(_effectguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&APO));
-		if (SUCCEEDED(hr))
+		if (SUCCEEDED(CoCreateInstance(_effectguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&APO))))
 		{
-			hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&APORT));
-			if (SUCCEEDED(hr))
+			if (SUCCEEDED(APO->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&APORT))))
 			{
-				hr = (this->APO)->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&APOCfg));
-				if (SUCCEEDED(hr))
+				if (SUCCEEDED(APO->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&APOCfg))))
 				{
-
 					memset(&initstruct, 0, sizeof(APOInitSystemEffects2));
 
-					hr = pEndpoint->OpenPropertyStore(
-						STGM_READ, &pProps);
-					if ((SUCCEEDED(hr)) || 0 != pProps)
+					if ((SUCCEEDED(pEndpoint->OpenPropertyStore(STGM_READ, &pProps))) || 0 != pProps)
 					{
-						//Get apo settings
-
 						try
 						{
 							void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
 							if (hlp != 0) {
-								fxprop = new(hlp) IPropertyStoreFX((this->_eapo)->getDeviceGuid(), KEY_READ);
-								if (FAILED(fxprop->TryOpenPropertyStoreRegKey()))
+								fxprop = new(hlp) IPropertyStoreFX(_eapo->getDeviceGuid(), KEY_READ);
+								if (true == fxprop->TryOpenPropertyStoreRegKey())
 								{
 									TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
-										(this->_eapo)->getDeviceGuid().data(),
-										(this->_eapo)->getDeviceName().data());
+										_eapo->getDeviceGuid().data(),
+										_eapo->getDeviceName().data());
 								}
 							}
 						}
 						catch (...)
 						{
-							//...
+							LEAVE_(true)
 						}
 
 						initstruct.APOInit.cbSize = sizeof(APOInitSystemEffects);
 						initstruct.APOInit.clsid = _effectguid;
 
-						//IPropertyStore object !
+						//IPropertyStore
 						initstruct.pAPOEndpointProperties = pProps;
 						initstruct.pAPOSystemEffectsProperties = reinterpret_cast<IPropertyStore*>(fxprop);
 
-						//IMMDeviceCollection object !
+						//IMMDeviceCollection
 						initstruct.pDeviceCollection = pCollection;
 
 						/* only for APOInitSystemEffects2 structure
@@ -154,11 +143,9 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 						*/
 					}
 
-					hr = (this->APO)->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&initstruct));
-					if (SUCCEEDED(hr))
+					if (SUCCEEDED(APO->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&initstruct))))
 					{
-						hr = (this->APO)->GetRegistrationProperties(&APOInfo);
-						if (SUCCEEDED(hr))
+						if (SUCCEEDED(APO->GetRegistrationProperties(&APOInfo)))
 						{
 							TraceF(L"APO: Successfully initialized Name: %s "
 								"Copyright: %s Max Input cconnections %d "
@@ -189,8 +176,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	w.nAvgBytesPerSec = w.nSamplesPerSec * (w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8);
 	
-	hr = CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType);
-	if (SUCCEEDED(hr) || 0 == iAudType)
+	if ((SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType))) || 0 == iAudType)
 	{
 		//setting buffer
 		pIn_.u32BufferFlags = BUFFER_VALID;
@@ -218,7 +204,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		try
 		{
 			//put settings to apo
-			(this->APOCfg)->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
+			APOCfg->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
 			CM_RELEASE(sf)
 			LEAVE_(false)
 		}
@@ -322,9 +308,7 @@ APOFilter::~APOFilter()
 
 #ifdef _IPROP_FX_INTERNAL
 			MH_RELEASE(fxprop)
-#endif // !_IPROP_FX_INTERNAL
-
-			//CoFreeUnusedLibrariesEx(0, 0); //is Unstable
+#endif
 	}
 	catch (...) {
 		TraceF(L"APO: Deinitialize failed");
