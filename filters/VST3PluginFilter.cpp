@@ -18,7 +18,6 @@
 #include "stdafx.h"
 #include "helpers/StringHelper.h"
 #include "helpers/LogHelper.h"
-#include "helpers/ChannelHelper.h"
 #include "VST3PluginFilter.h"
 
 using namespace std;
@@ -47,6 +46,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	else {
 		LEAVE_(true)
 	}
+
+	unsigned int frameCount = sampleRate / 100;
 
 	//get global functions
 	auto _InitDll = func(InitModuleFunc, Plugindll, "InitDll");
@@ -138,7 +139,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	pcd.outputs = &output_;
 
 	//setting channels
-	SpeakerArrangement arr = ChannelHelper::getDefaultChannelMask(channelCount);
+	SpeakerArrangement arr = _eapo->getChannelMask();
 	SpeakerArrangement fake = kStereo;
 
 	if (processor->setBusArrangements(&arr, 1, 0, 0) != kResultOk)
@@ -161,8 +162,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		output_.numChannels = channelCount;
 	}
 
-	setup.maxSamplesPerBlock = (input_.numChannels != channelCount) ? (maxFrameCount * 2) :
-		(maxFrameCount * channelCount);
+	setup.maxSamplesPerBlock = (input_.numChannels != channelCount) ? (frameCount * 2) :
+		(frameCount * channelCount);
 
 	if (processor->setupProcessing(setup) == kResultFalse) {
 		LEAVE_(true)

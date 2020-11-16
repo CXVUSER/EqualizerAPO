@@ -53,7 +53,7 @@ ULONG IPropertyStoreFX::Release() {
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
 #define LEAVE_(p)	\
-		LeaveCriticalSection(&cr);	\
+		LeaveCriticalSection(&this->cr);	\
 		return p;
 
 	auto RET_DEVICE_STRING = [pv](wchar_t* p) {
@@ -314,6 +314,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 {
 	HRESULT hr = S_OK;
+	bool result = false;
 	EDataFlow devicetype = eRender;
 	IMMDeviceEnumerator* enumemator = 0;
 
@@ -327,8 +328,7 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**> (&enumemator)
-	)
-	)) | enumemator != 0)
+	))) | enumemator != 0)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -367,9 +367,8 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 			ime->Release();
 			imd->Release();
 
-			if ((reg = RegistryHelper::openKey(regfx, _dwAcc)))
-				return true;
-
+			if (reg = RegistryHelper::openKey(regfx, _dwAcc))
+				result = true;
 			/*
 			if (!(regProp = RegistryHelper::openKey(regProp, _dwAcc)))
 				return false;
@@ -378,6 +377,5 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 	}
 
 	LeaveCriticalSection(&cr);
-
-	return false;
+	return result;
 }

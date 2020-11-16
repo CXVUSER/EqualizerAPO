@@ -514,10 +514,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	bool lock = false;
 	std::wstring cpath = L"";
 
-	if (pfnAddPage == 0)
-		return E_INVALIDARG;
-
-	if (lParam == 0)
+	if (pfnAddPage == 0 || lParam == 0)
 		return E_INVALIDARG;
 
 	wchar_t* eguid = &reinterpret_cast<AudioFXExtensionParams*>(lParam)->pwstrEndpointID[17]; //Soundcard GUID

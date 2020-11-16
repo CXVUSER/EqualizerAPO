@@ -34,7 +34,7 @@ APOFilter::APOFilter(GUID efguid, FilterEngine * e)
 std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
 #define LEAVE_(b)  \
-		 bypass = b; return channelNames;
+		 this->bypass = b; return channelNames;
 
 	HRESULT hr = 0;
 	EDataFlow devicetype = eRender;
@@ -51,22 +51,25 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		TraceF(L"APO: Device guid not specified");
 		LEAVE_(true)
 	}
-	
-	//calc buffer size
-	size_t buffersize = ((maxFrameCount * channelCount) * sizeof(float)) * 2;
 
-	bufferinput = reinterpret_cast<float*> (MemoryHelper::alloc(buffersize));
+	//calc buffer size
+	int frameCount = sampleRate / 100;
+	//(sampleRate * 0x51eb851f) >> 0x24 >> 1;
+	//(sampleRate * 0x51eb851f) >> 0x24 >> 0x1f;
+
+	size_t buffersize = ((frameCount * channelCount) * sizeof(float)) * 2;
+	
+	bufferinput = (float*) MemoryHelper::alloc(buffersize);
 	memset(bufferinput, 0, buffersize);
 
-	bufferoutput = reinterpret_cast<float*>((char*)bufferinput + (buffersize / 2));
-
+	bufferoutput = (float*) ((char*)bufferinput + (buffersize / 2));
+	
 	if ((SUCCEEDED(CoCreateInstance
 	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**>(&pEnumerator)
-	)
-	)) || 0 == pEnumerator)
+	))) || 0 == pEnumerator)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -166,52 +169,54 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		LEAVE_(true)
 	}
 
-	WAVEFORMATEX w = { 0 };
-	w.nChannels = static_cast<WORD>(channelCount);
-	w.nSamplesPerSec = static_cast<DWORD>(sampleRate);
-	
-	w.wFormatTag = (w.wBitsPerSample = sf ? sf->wBitsPerSample : 32) < 32 ?
-		WAVE_FORMAT_PCM :
-		WAVE_FORMAT_IEEE_FLOAT;
-
-	w.nAvgBytesPerSec = w.nSamplesPerSec * (w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8);
-	
-	if ((SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType))) || 0 == iAudType)
+	if (APOCfg)
 	{
-		//setting buffer
-		pIn_.u32BufferFlags = BUFFER_VALID;
-		pIn_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
-		pIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
+		WAVEFORMATEX w = { 0 };
+		w.nChannels = (WORD) channelCount;
+		w.nSamplesPerSec = (WORD) sampleRate;
 
-		pOut_.u32BufferFlags = BUFFER_INVALID;
-		pOut_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
-		pOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
+		w.wFormatTag = (w.wBitsPerSample = sf ? sf->wBitsPerSample : 32) < 32 ?
+			WAVE_FORMAT_PCM :
+			WAVE_FORMAT_IEEE_FLOAT;
 
-		//Configure input buffer
-		coDeskIn_.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
-		coDeskIn_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-		coDeskIn_.u32MaxFrameCount = maxFrameCount;
-		coDeskIn_.pFormat = iAudType;
-		coDeskIn_.pBuffer = reinterpret_cast<UINT_PTR>(bufferinput);
+		w.nAvgBytesPerSec = w.nSamplesPerSec * (w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8);
 
-		//Configure Out buffer
-		coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
-		coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-		coDeskOut_.u32MaxFrameCount = maxFrameCount;
-		coDeskOut_.pFormat = iAudType;
-		coDeskOut_.pBuffer = reinterpret_cast<UINT_PTR>(bufferoutput);
-	
-		try
+		if ((SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType))) || 0 == iAudType)
 		{
-			//put settings to apo
-			APOCfg->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
-			CM_RELEASE(sf)
-			LEAVE_(false)
-		}
-		catch (...) {
-			//...
-		}
+			//setting buffer
+			pIn_.u32BufferFlags = BUFFER_VALID;
+			pIn_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
+			pIn_.pBuffer = (UINT_PTR) bufferinput;
 
+			pOut_.u32BufferFlags = BUFFER_INVALID;
+			pOut_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
+			pOut_.pBuffer = (UINT_PTR) bufferoutput;
+
+			//Configure input buffer
+			coDeskIn_.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
+			coDeskIn_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+			coDeskIn_.u32MaxFrameCount = frameCount;
+			coDeskIn_.pFormat = iAudType;
+			coDeskIn_.pBuffer = (UINT_PTR) bufferinput;
+
+			//Configure Out buffer
+			coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
+			coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+			coDeskOut_.u32MaxFrameCount = frameCount;
+			coDeskOut_.pFormat = iAudType;
+			coDeskOut_.pBuffer = (UINT_PTR) bufferoutput;
+
+			try
+			{
+				//put settings to apo
+				APOCfg->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
+				CM_RELEASE(sf)
+					LEAVE_(false)
+			}
+			catch (...) {
+				//...
+			}
+		}
 	}
 
 	LEAVE_(true)
@@ -287,9 +292,7 @@ APOFilter::~APOFilter()
 			SAFE_RELEASE(pEndpoint)
 			SAFE_RELEASE(pProps)
 
-#ifndef _IPROP_FX_INTERNAL
 			SAFE_RELEASE(fxprop)
-#endif
 
 			if (bypass == false)
 			{
@@ -306,9 +309,6 @@ APOFilter::~APOFilter()
 			SAFE_RELEASE(APORT)
 			SAFE_RELEASE(APO)
 
-#ifdef _IPROP_FX_INTERNAL
-			MH_RELEASE(fxprop)
-#endif
 	}
 	catch (...) {
 		TraceF(L"APO: Deinitialize failed");
