@@ -51,6 +51,7 @@ public:
 	virtual HRESULT Getvalue(REFPROPERTYKEY key, PROPVARIANT* pv);
 	virtual HRESULT Setvalue() { return E_NOTIMPL; };
 	virtual bool TryOpenPropertyStoreRegKey();
+	HRESULT DeserializePropVarinat(int type, void* src, size_t cb, PROPVARIANT* dest);
 private:
 
 	long ref = 1;

@@ -57,13 +57,11 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		return p;
 
 	auto RET_DEVICE_STRING = [pv](wchar_t* p) {
-		if (p == 0) { 
+		if (p == 0)
 			return E_FAIL;
-		}
-		wchar_t* name = reinterpret_cast<wchar_t*> (CoTaskMemAlloc(240));
-		if (name == 0) {
+		wchar_t* name = (wchar_t*) CoTaskMemAlloc(240);
+		if (name == 0)
 			return E_OUTOFMEMORY;
-		}
 		memset(name, 0, 240);
 		wcscpy(name, p);
 		pv->vt = VT_LPWSTR;
@@ -88,7 +86,10 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		CLSID cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if (FAILED(CLSIDFromString(_guid.c_str(), &cl))) { LEAVE_(E_FAIL) }
+		if (FAILED(CLSIDFromString(_guid.c_str(), &cl))) 
+		{
+			LEAVE_(E_FAIL)
+		}
 		if (SUCCEEDED(StringFromCLSID(cl, &gd)))
 		{
 			pv->vt = VT_LPWSTR;
@@ -146,7 +147,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	{
 		DWORD sdata = size;
 
-		wchar_t* x = reinterpret_cast<wchar_t*>(CoTaskMemAlloc(size));
+		wchar_t* x = (wchar_t*) CoTaskMemAlloc(size);
 
 		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
 
@@ -183,60 +184,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 		if (!status)
 		{
-			auto DeserializePropVarinat = [](int type, PROPVARIANT* src, size_t cb, PROPVARIANT* dest)
-			{
-				if (!src)
-					return E_FAIL;
-				if (!cb)
-					return E_FAIL;
-
-				dest->vt = VT_EMPTY;
-
-				if (type == 4)
-				{
-					dest->vt = VT_UI4;
-					dest->lVal = src->lVal;
-					return S_OK;
-				}
-
-				switch (src->vt)
-				{
-				case VT_I1:
-					dest->cVal = src->cVal;
-					break;
-				case VT_I4:
-					dest->lVal = src->lVal;
-					break;
-				case VT_UI1:
-					dest->bVal = src->bVal;
-					break;
-				case VT_BOOL:
-					dest->boolVal = src->boolVal;
-					break;
-				case VT_BSTR:
-				case VT_R4:
-					dest->fltVal = src->fltVal;
-					break;
-				case VT_UI4:
-					dest->ulVal = src->ulVal;
-				case VT_DECIMAL:
-					dest->decVal = src->decVal;
-					break;
-				case VT_EMPTY:
-
-					break;
-				default:
-					break;
-				}
-
-				dest->vt = src->vt;
-
-				return S_OK;
-			};
-
-			HRESULT h = DeserializePropVarinat(REG_BINARY, &pvdata, size, pv);
-			if (!h)
-				hr = S_OK;
+			hr = DeserializePropVarinat(type, &pvdata, size, pv);
 		}
 		LEAVE_(hr)
 	}
@@ -248,7 +196,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
 
 		if (!status) {
-			hr = InitPropVariantFromStringAsVector(reinterpret_cast<PCWSTR>(str), pv);
+			hr = InitPropVariantFromStringAsVector((PCWSTR) str, pv);
 
 			if (FAILED(hr))
 				hr = E_FAIL;
@@ -267,6 +215,9 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 		if (vm)
 		{
+			LEAVE_(E_FAIL)
+		}
+
 			IMalloc* ml;
 			size_t s2 = 0;
 
@@ -286,9 +237,9 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					wchar_t buf[520];
 					memset(buf, 0, 208);
 
-					if (SHLoadIndirectString(reinterpret_cast<PCWSTR>(vm), buf, 260, 0) != E_FAIL)
+					if (SHLoadIndirectString((PCWSTR) vm, buf, 260, 0) != E_FAIL)
 					{
-						pv->vt = VT_LPWSTR; // 0x1F
+						pv->vt = VT_LPWSTR;
 						pv->pwszVal = (LPWSTR)buf;
 						LEAVE_(S_OK)
 					}
@@ -304,7 +255,6 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					LEAVE_(E_FAIL)
 				}
 			}
-		}
 		LEAVE_(hr)
 	}
 
@@ -379,3 +329,123 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 	LeaveCriticalSection(&cr);
 	return result;
 }
+
+HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb, PROPVARIANT* dest)
+{
+	if (!src)
+		return E_FAIL;
+	if	(!cb)
+		return E_FAIL;
+
+	*dest = { 0 };
+
+	if (type == REG_DWORD)
+	{
+		dest->vt = VT_UI4;
+		dest->lVal = *((LONG*)src);
+		return S_OK;
+	}
+	else if (type == REG_SZ) {
+		size_t s = wcslen((wchar_t*)src) * 2;
+		LPWSTR mem = (LPWSTR)CoTaskMemAlloc(s);
+		if (!mem)
+			return E_FAIL;
+
+		memcpy(mem, src, s);
+
+		dest->vt = VT_LPWSTR;
+		dest->pwszVal = mem;
+		return S_OK;
+	}
+
+	PROPVARIANT* p = (PROPVARIANT*)src;
+	VARTYPE t = p->vt;
+
+	if (t == VT_EMPTY) {
+		size_t s = cb - 8;
+		void* mem = CoTaskMemAlloc(s);
+		if (!mem)
+			return E_FAIL;
+
+		dest->blob.cbSize = cb;
+		dest->blob.pBlobData = (BYTE*) mem;
+
+		memcpy(mem, &p->pbstrVal, s);
+		dest->vt = p->vt;
+		return S_OK;
+	}
+	else if (t == VT_BLOB) {
+		size_t s = cb - 8;
+		void* mem = CoTaskMemAlloc(s);
+		if (!mem)
+			return E_FAIL;
+
+		dest->blob.pBlobData =(BYTE*) mem;
+		dest->blob.cbSize = cb;
+
+		memcpy(mem, &p->blob, s);
+		dest->vt = VT_EMPTY;
+		return S_OK;
+	}
+	else if (t == VT_UI8 || t == VT_FILETIME) {
+		size_t s = cb - 8;
+		memcpy(&dest->pbVal, &p->pbVal, s);
+		return S_OK;
+	}
+
+	switch (p->vt)
+	{
+	case VT_I2:
+	case VT_I4:
+	case VT_R4:
+	case VT_R8:
+	case VT_CY:
+	case VT_DATE:
+	case VT_ERROR:
+	case VT_BOOL:
+	case VT_UI1:
+	case VT_UI2:
+	case VT_I8:
+	{
+		memcpy(&dest->pbVal, &p->pbVal, cb - 8);
+	}
+	break;
+	case VT_LPSTR:
+	{
+		char* str = (char*) &p->pbVal;
+		size_t s = strlen(str);
+		char* val = (char*) CoTaskMemAlloc(s);
+		if (!val)
+			return E_FAIL;
+
+		memcpy(val, str, s);
+		dest->pszVal = val;
+		dest->vt = VT_EMPTY;
+	}
+	break;
+	case VT_BSTR:
+	{
+		size_t s = wcslen(p->bstrVal + 1);
+		void* mem = CoTaskMemAlloc(s * 2);
+		if (!mem)
+			return E_FAIL;
+		memcpy(mem, &p->bstrVal, s * 2);
+
+		dest->pbstrVal = (BSTR*)mem;
+		dest->vt = VT_EMPTY;
+	}
+	break;
+	case VT_CLSID:
+	{
+		GUID* g = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+		if (!g)
+			return E_FAIL;
+		memcpy(g, &p->pbVal, sizeof(GUID));
+		dest->puuid = g;
+		dest->vt = VT_EMPTY;
+	}
+	break;
+	};
+	return S_OK;
+}
+

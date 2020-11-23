@@ -140,7 +140,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	//setting channels
 	SpeakerArrangement arr = _eapo->getChannelMask();
-	SpeakerArrangement fake = kStereo;
+	SpeakerArrangement fake = KSAUDIO_SPEAKER_STEREO;
 
 	if (processor->setBusArrangements(&arr, 1, 0, 0) != kResultOk)
 	{
@@ -177,23 +177,18 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		LEAVE_(true)
 	}
 
+	auto actbus = [](IComponent* component, int i,int d) {
+		BusInfo inf = { 0 };
+		component->getBusInfo(kAudio, d, i, inf);
+
+		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, d, i, true) :
+			component->activateBus(kAudio, d, i, false);
+	};
+
 	for (size_t i = 0; i < buscountinp; i++)
-	{
-		BusInfo inf = { 0 };
-		component->getBusInfo(kAudio, kInput, i, inf);
-
-		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, kInput, i, true) :
-			component->activateBus(kAudio, kInput, i, false);
-	}
-
+		actbus(component, buscountout, kInput);
 	for (size_t i = 0; i < buscountout; i++)
-	{
-		BusInfo inf = { 0 };
-		component->getBusInfo(kAudio, kOutput, i, inf);
-
-		(inf.flags & BusInfo::kDefaultActive) == false ? component->activateBus(kAudio, kOutput, i, true) :
-			component->activateBus(kAudio, kOutput, i, false);
-	}
+		actbus(component, buscountout,kOutput);
 
 	if (_settings.size() > 0)
 	{
