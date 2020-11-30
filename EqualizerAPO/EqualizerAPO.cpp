@@ -517,9 +517,9 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	if (pfnAddPage == 0 || lParam == 0)
 		return E_INVALIDARG;
 
-	wchar_t* eguid = &reinterpret_cast<AudioFXExtensionParams*>(lParam)->pwstrEndpointID[17]; //Soundcard GUID
+	wchar_t* eguid = &((AudioFXExtensionParams*)(lParam))->pwstrEndpointID[17]; //Soundcard GUID
 
-	if (reinterpret_cast<wchar_t*>(eguid[0]) == L"")
+	if (((wchar_t*)(eguid[0])) == L"")
 		return E_INVALIDARG;
 
 	cpath = RegistryHelper::readValue(APP_REGPATH, L"ConfigPath");
@@ -600,7 +600,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 							hr = CLSIDFromString(value.c_str(), &g);
 							if ((SUCCEEDED(hr)) & g != GUID_NULL)
 							{
-								hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, reinterpret_cast<void**>(&ish));
+								hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, (void**) &ish);
 								if ((SUCCEEDED(hr)) & ish != 0)
 								{
 									hr = ish->AddPages(pfnAddPage, lParam);
@@ -625,6 +625,7 @@ IFACEMETHODIMP EqualizerAPO::ReplacePage(
 	__in UINT uPageID,
 	__in LPFNADDPROPSHEETPAGE pfnReplacePage,
 	__in LPARAM lParam
-) {
+)
+{
 	return E_NOTIMPL;
 }

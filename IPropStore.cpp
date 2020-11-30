@@ -52,9 +52,6 @@ ULONG IPropertyStoreFX::Release() {
 
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
-#define LEAVE_(p)	\
-		LeaveCriticalSection(&this->cr);	\
-		return p;
 
 	auto RET_DEVICE_STRING = [pv](wchar_t* p) {
 		if (p == 0)
@@ -74,7 +71,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	HRESULT hr = E_FAIL;
 
 	if (pv == 0) { 
-		LEAVE_(E_POINTER)
+		hr = E_POINTER;
+		goto LEAVE_;
 	}
 
 	wchar_t keystr[128] = { 0 };
@@ -88,28 +86,33 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 		if (FAILED(CLSIDFromString(_guid.c_str(), &cl))) 
 		{
-			LEAVE_(E_FAIL)
+			hr = E_FAIL;
+			goto LEAVE_;
 		}
 		if (SUCCEEDED(StringFromCLSID(cl, &gd)))
 		{
 			pv->vt = VT_LPWSTR;
 			pv->pwszVal = gd;
-			LEAVE_(S_OK)
+			hr = S_OK;
+			goto LEAVE_;
 		}
 		else {
 			CoTaskMemFree(gd);
-			LEAVE_(E_FAIL)
+			hr = E_FAIL;
+			goto LEAVE_;
 		}
 	}
 
 	if (key == PKEY_DeviceInterface_FriendlyName) //soundcard name
 	{
-		LEAVE_(RET_DEVICE_STRING(L"ESI Juli@"))
+		RET_DEVICE_STRING(L"ESI Juli@");
+			goto LEAVE_;
 	} //...
 
 	if (key == PKEY_Device_FriendlyName) //interface name
 	{
-		LEAVE_(RET_DEVICE_STRING(L"Speakers (ESI Juli@)"))
+		RET_DEVICE_STRING(L"Speakers (ESI Juli@)");
+			goto LEAVE_;
 	} //...
 
 	//Convert CLSID to GUID string
@@ -127,7 +130,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		key.pid);
 
 	if (FAILED(hr)) {
-		LEAVE_(E_FAIL)
+		hr = E_FAIL;
+		goto LEAVE_;
 	}
 
 	DWORD type = 0;
@@ -136,11 +140,13 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
 
 	if (status) {
-		LEAVE_(E_FAIL)
+		hr = E_FAIL;
+		goto LEAVE_;
 	}
 
 	if (type == REG_NONE) {
-		LEAVE_(E_FAIL)
+		hr = E_FAIL;
+		goto LEAVE_;
 	}
 
 	if (type == REG_SZ)
@@ -156,7 +162,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 			pv->pwszVal = x;
 			hr = S_OK;
 		}
-		LEAVE_(hr)
+		goto LEAVE_;
 	}
 
 	if (type == REG_DWORD)
@@ -172,7 +178,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 				hr = S_OK;
 			}
 		}
-		LEAVE_(hr)
+		goto LEAVE_;
 	}
 
 	if (type == REG_BINARY)
@@ -186,7 +192,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		{
 			hr = DeserializePropVarinat(type, &pvdata, size, pv);
 		}
-		LEAVE_(hr)
+		goto LEAVE_;
 	}
 
 	if (type == REG_MULTI_SZ)
@@ -204,7 +210,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 			CoTaskMemFree(str);
 			hr = S_OK;
 		}
-		LEAVE_(hr)
+		goto LEAVE_;
 	}
 
 	if (type == REG_EXPAND_SZ) {
@@ -215,7 +221,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 		if (vm)
 		{
-			LEAVE_(E_FAIL)
+			hr = E_FAIL;
+			goto LEAVE_;
 		}
 
 			IMalloc* ml;
@@ -241,24 +248,29 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 					{
 						pv->vt = VT_LPWSTR;
 						pv->pwszVal = (LPWSTR)buf;
-						LEAVE_(S_OK)
+						hr = S_OK;
+						goto LEAVE_;
 					}
 					else
 					{
 						if (GetLastError() == ERROR_ACCESS_DENIED) {
-							LEAVE_(E_FAIL)
+							hr = E_FAIL;
+							goto LEAVE_;
 						}
 					}
 				}
 				else
 				{
-					LEAVE_(E_FAIL)
+					hr = E_FAIL;
+					goto LEAVE_;
 				}
 			}
-		LEAVE_(hr)
+			goto LEAVE_;
 	}
 
-	LEAVE_(hr)
+	LEAVE_:
+	LeaveCriticalSection(&this->cr);
+	return hr;
 };
 
 bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
@@ -277,7 +289,7 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		reinterpret_cast<void**> (&enumemator)
+		(void**) &enumemator
 	))) | enumemator != 0)
 	{
 		IMMDevice* imd = 0;
@@ -288,7 +300,7 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
 		if ((SUCCEEDED(hr)) | imd != 0)
 		{
-			if (SUCCEEDED(imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**>(&ime))))
+			if (SUCCEEDED(imd->QueryInterface(__uuidof(IMMEndpoint), (void**) &ime)))
 			{
 				if (ime == 0)
 					return false;
@@ -363,11 +375,12 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 
 	if (t == VT_EMPTY) {
 		size_t s = cb - 8;
+
 		void* mem = CoTaskMemAlloc(s);
 		if (!mem)
 			return E_FAIL;
 
-		dest->blob.cbSize = cb;
+		dest->blob.cbSize = p->wReserved2;
 		dest->blob.pBlobData = (BYTE*) mem;
 
 		memcpy(mem, &p->pbstrVal, s);

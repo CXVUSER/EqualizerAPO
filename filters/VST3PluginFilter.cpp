@@ -28,15 +28,11 @@ VST3PluginFilter::VST3PluginFilter(FilterEngine* e, std::wstring path, std::wstr
 
 std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
-#define LEAVE_(b)  \
-		 bypass = b; return channelNames;
-
+	channelCount = channelNames.size();
 	ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
 
-	channelCount = channelNames.size();
-
 	if (channelCount == 0 || _path == L"") {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	Plugindll = LoadLibraryW(_path.data());
@@ -44,7 +40,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		TraceF(L"VST3: Load plugin: %s", _path.data());
 	}
 	else {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	unsigned int frameCount = sampleRate / 100;
@@ -55,17 +51,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	//Initialize Plugin
 	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	if ((fact = _GetPluginFactory()) == 0) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	int classes = fact->countClasses();
 
 	if (classes == 0) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	for (size_t i = 0; i < classes; i++)
@@ -77,44 +73,51 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		{
 			try
 			{
-				if ((fact->createInstance(cl.cid, FUnknown::iid, reinterpret_cast<void**> (&component)) == kResultTrue) & component != 0)
+				if (fact->createInstance(cl.cid, FUnknown::iid, (void**) &component) == kResultTrue)
 				{
-					if (component->queryInterface(IEditController::iid, reinterpret_cast<void**> (&controller)) != kResultTrue)
+					if (component != 0)
 					{
-						TUID controlID = { 0 };
+						component->initialize(0);
 
-						component->getControllerClassId(controlID);
-						fact->createInstance(controlID, IEditController::iid, reinterpret_cast<void**> (&controller));
-					}
+						if (component->queryInterface(IEditController::iid, (void**) &controller) != kResultTrue)
+						{
+							TUID controlID = { 0 };
 
-					if (controller != NULL) {
-						if ((component->queryInterface(Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cm)) == kResultTrue) & cm != NULL) {
-							if ((controller->queryInterface(Vst::IConnectionPoint::iid, reinterpret_cast<void**> (&cnt)) == kResultTrue) & cnt != NULL)
-							{
-								cm->connect(cnt);
-								cnt->connect(cm);
+							if (component->getControllerClassId(controlID) == kResultOk)
+							if (fact->createInstance(controlID, IEditController::iid, (void**) &controller) == kResultTrue)
+							if (controller != NULL) {
+								if (component->queryInterface(Vst::IConnectionPoint::iid, (void**) &cm) == kResultTrue) {
+									if (cm != NULL)
+										if (controller->queryInterface(Vst::IConnectionPoint::iid,(void**) &cnt) == kResultTrue)
+										{
+											if (cnt != NULL)
+											{
+												cm->connect(cnt);
+												cnt->connect(cm);
+											}
+										}
+								}
+								controller->initialize(0);
 							}
 						}
-						controller->initialize(0);
 					}
 				}
 				else {
-					LEAVE_(true)
+					goto LEAVE_;
 				}
-				component->initialize(0);
 			}
 			catch (...)
 			{
 				TraceF(L"VST3: initializing plugin crashed!");
-				LEAVE_(true);
+				goto LEAVE_;
 			}
 			break;
 		}
 	}
 
-	if (component->queryInterface(IAudioProcessor::iid, reinterpret_cast<void**> (&processor)) == kResultFalse &
-		processor == 0) {
-		LEAVE_(true)
+	if (component->queryInterface(IAudioProcessor::iid, (void**) &processor) == kResultFalse) {
+		if (processor == 0)
+			goto LEAVE_;
 	}
 
 	int buscountinp = component->getBusCount(kAudio, kInput);
@@ -166,15 +169,15 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		(frameCount * channelCount);
 
 	if (processor->setupProcessing(setup) == kResultFalse) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	if (component->setActive(true) == kResultFalse) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	if (processor->setProcessing(true) == kResultFalse) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	auto actbus = [](IComponent* component, int i,int d) {
@@ -186,7 +189,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	};
 
 	for (size_t i = 0; i < buscountinp; i++)
-		actbus(component, buscountout, kInput);
+		actbus(component, buscountinp, kInput);
 	for (size_t i = 0; i < buscountout; i++)
 		actbus(component, buscountout,kOutput);
 
@@ -197,26 +200,28 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
 		BYTE* buf = reinterpret_cast<BYTE*>(malloc(bufSize));
-		if (CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
-		{
-			set.write(buf, bufSize, 0);
+		if (buf) {
+			if (CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
+			{
+				set.write(buf, bufSize, 0);
 
-			try
-			{
-				component->setState(&set);
+				try
+				{
+					component->setState(&set);
+				}
+				catch (...)
+				{
+					TraceF(L"VST3: setState plugin failed!");
+				}
 			}
-			catch (...)
-			{
-				TraceF(L"VST3: setState plugin failed!");
-			}
+			if (buf)
+				free(buf);
 		}
-		if (buf)
-			free(buf);
 	}
 	else
 	{
 		if (controller == NULL) {
-			LEAVE_(false)
+			goto LEAVE_;
 		}
 
 		int pcount = controller->getParameterCount();
@@ -234,7 +239,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		}
 
 		IUnitInfo* unit = 0;
-		if (component->queryInterface(IUnitInfo::iid, reinterpret_cast<void**>(&unit)) == kResultOk)
+		if (component->queryInterface(IUnitInfo::iid, (void**) &unit) == kResultOk)
 		{
 			if (unit != NULL)
 			{
@@ -274,7 +279,10 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		}
 	}
 
-	LEAVE_(false)
+	bypass = false;
+
+LEAVE_:
+	return channelNames;
 }
 
 #pragma AVRT_CODE_BEGIN
@@ -313,10 +321,13 @@ VST3PluginFilter::~VST3PluginFilter()
 {
 	//Unload plugin
 	try {
-		if (cm != 0 & cnt != 0)
+		if (cm != 0)
 		{
-			cm->disconnect(cnt);
-			cnt->disconnect(cm);
+			if (cnt != 0)
+			{
+				cm->disconnect(cnt);
+				cnt->disconnect(cm);
+			}
 		}
 
 		if (processor != 0)

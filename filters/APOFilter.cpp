@@ -33,23 +33,20 @@ APOFilter::APOFilter(GUID efguid, FilterEngine * e)
 
 std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
-#define LEAVE_(b)  \
-		 this->bypass = b; return channelNames;
-
+	channelCount = channelNames.size();
 	HRESULT hr = 0;
 	EDataFlow devicetype = eRender;
 	WAVEFORMATEX* sf;
-	channelCount = channelNames.size();
 
 	if (channelCount == 0) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 	if (_effectguid == GUID_NULL) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 	if (_eapo->getDeviceGuid() == L"") {
 		TraceF(L"APO: Device guid not specified");
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	//calc buffer size
@@ -108,7 +105,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 				{
 					memset(&initstruct, 0, sizeof(APOInitSystemEffects2));
 
-					if ((SUCCEEDED(pEndpoint->OpenPropertyStore(STGM_READ, &pProps))) || 0 != pProps)
+					if ((SUCCEEDED(pEndpoint->OpenPropertyStore(STGM_READ, &pProps))))
 					{
 						try
 						{
@@ -125,7 +122,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 						}
 						catch (...)
 						{
-							LEAVE_(true)
+							goto LEAVE_;
 						}
 
 						initstruct.APOInit.cbSize = sizeof(APOInitSystemEffects);
@@ -166,7 +163,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		}
 	}
 	catch (...) {
-		LEAVE_(true)
+		goto LEAVE_;
 	}
 
 	if (APOCfg)
@@ -211,7 +208,8 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 				//put settings to apo
 				APOCfg->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
 				CM_RELEASE(sf)
-					LEAVE_(false)
+					bypass = false;
+					goto LEAVE_;
 			}
 			catch (...) {
 				//...
@@ -219,7 +217,8 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		}
 	}
 
-	LEAVE_(true)
+	LEAVE_:
+	return channelNames;
 }
 
 #pragma AVRT_CODE_BEGIN
