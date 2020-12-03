@@ -170,7 +170,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	{
 		WAVEFORMATEX w = { 0 };
 		w.nChannels = (WORD) channelCount;
-		w.nSamplesPerSec = (WORD) sampleRate;
+		w.nSamplesPerSec = (DWORD) sampleRate;
 
 		w.wFormatTag = (w.wBitsPerSample = sf ? sf->wBitsPerSample : 32) < 32 ?
 			WAVE_FORMAT_PCM :
