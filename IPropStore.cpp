@@ -348,6 +348,8 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		return E_FAIL;
 	if	(!cb)
 		return E_FAIL;
+	if (!dest)
+		return E_FAIL;
 
 	*dest = { 0 };
 

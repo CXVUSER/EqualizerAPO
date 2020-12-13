@@ -82,81 +82,79 @@ public:
 
 	//Read bytes from stream buffer
 	virtual tresult PLUGIN_API read(void* buffer, int32 numBytes, int32* numBytesRead = 0) override {
-		if (buffer != 0 && numBytes != 0)
-		{
-			char* b = reinterpret_cast<char*>(buffer);
-			int num = 0;
+		if (buffer == NULL && numBytes == NULL)
+			goto LEAVE_;
+		if (!buf)
+			goto LEAVE_;
+		if (sk > numBytes)
+			goto LEAVE_;
+		if (numBytes > s)
+			numBytes -= (numBytes - s);
 
-			__try {
-				if (seekbuf < numBytes)
-				{
-					if (numBytes > s)
-						numBytes -= (numBytes - s);
-
-					memcpy(b, &buf[seekbuf], numBytes);
-					num += numBytes;
-
-					seekbuf += num;
-				}
-				else {
-					return kResultFalse;
-				}
-
-				if (numBytesRead)
-					*numBytesRead = num;
-			}
-			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return kResultFalse;
-			}
-			return kResultTrue;
+		__try {
+			memcpy(buffer, &buf[sk], numBytes);
 		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			goto LEAVE_;
+		}
+		sk += numBytes;
+			
+		__try {
+			if (numBytesRead)
+				*numBytesRead = numBytes;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			goto LEAVE_;
+		}
+
+		return kResultTrue;
+		
+		LEAVE_:
 		return kResultFalse;
 	};
 
 	//Write to stream buffer
 	virtual tresult PLUGIN_API write(void* buffer, int32 numBytes, int32* numBytesWritten = 0) override {
-		if (buffer != 0 && numBytes != 0)
-		{
-			int num = 0;
-
-			char* b = reinterpret_cast<char*>(buffer);
-
-			__try {
-				buf = reinterpret_cast<char*>(realloc(buf, numBytes + s));
-				if (buf == NULL)
-					return kResultFalse;
-
-				memcpy(buf + seekbuf, buffer, numBytes);
-
-				s += numBytes;
-				num += numBytes;
-				seekbuf += num;
-
-				if (numBytesWritten)
-					*numBytesWritten = num;
-			}
-			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return kResultFalse;
-			}
-			return kResultTrue;
+		if (buffer == NULL && numBytes == NULL)
+			goto LEAVE_;
+		
+		buf = (char*) realloc(buf, numBytes + s);
+		if (buf == NULL)
+			goto LEAVE_;
+		__try {
+			memcpy(buf + sk, buffer, numBytes);
 		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			goto LEAVE_;
+		}
+
+		s += numBytes;
+		sk += numBytes;
+		__try {
+			if (numBytesWritten)
+				*numBytesWritten = numBytes;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			goto LEAVE_;
+		}
+		return kResultTrue;
+		
+		LEAVE_:
 		return kResultFalse;
 	};
 
 	//Set current position in the stream
 	virtual tresult PLUGIN_API seek(int64 pos, int32 mode, int64* result = 0) override {
 		if (mode == kIBSeekSet)
-			seekbuf = pos;
-
-		if (mode == kIBSeekCur)
-			seekbuf += pos;
-
-		if (mode == kIBSeekEnd)
-			seekbuf = s;
+			sk = pos;
+		else if(mode == kIBSeekCur)
+			sk += pos;
+		else if(mode == kIBSeekEnd)
+			sk = s;
 
 		__try {
 			if (result != 0)
-				*result = seekbuf;
+				*result = sk;
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER) {
 			return kResultFalse;
@@ -167,13 +165,14 @@ public:
 	virtual tresult PLUGIN_API tell(int64* pos) override {
 		if (pos != 0) {
 			__try {
-				*pos = seekbuf;
+				*pos = sk;
 			}
 			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return kResultFalse;
+				goto LEAVE_;
 			}
 			return kResultTrue;
 		}
+		LEAVE_:
 		return kResultFalse;
 	};
 
@@ -183,10 +182,11 @@ public:
 				size = s;
 			}
 			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return kResultFalse;
+				goto LEAVE_;
 			}
 			return kResultTrue;
 		}
+		LEAVE_:
 		return kResultFalse;
 	};
 
@@ -197,7 +197,7 @@ public:
 
 private:
 	char* buf = 0;
-	int64 seekbuf = 0;
+	int64 sk = 0;
 	int64 s = 0;
 };
 
