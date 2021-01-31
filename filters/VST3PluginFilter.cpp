@@ -26,6 +26,109 @@ VST3PluginFilter::VST3PluginFilter(FilterEngine* e, std::wstring path, std::wstr
 	: _eapo(e), _path(path), _settings(settings) {
 }
 
+bool VST3PluginFilter::InitPlugin(PClassInfo cl) {
+
+	__try {
+		if (fact->createInstance(cl.cid, FUnknown::iid, (void**)&component) == kResultTrue)
+		{
+			if (component == 0)
+
+				component->initialize(0);
+
+			if (component->queryInterface(IEditController::iid, (void**)&controller) != kResultTrue)
+			{
+				TUID controlID = { 0 };
+
+				if (component->getControllerClassId(controlID) == kResultOk)
+					if (fact->createInstance(controlID, IEditController::iid, (void**)&controller) == kResultTrue)
+						if (controller != NULL) {
+							if (component->queryInterface(Vst::IConnectionPoint::iid, (void**)&cm) == kResultTrue) {
+								if (cm != NULL)
+									if (controller->queryInterface(Vst::IConnectionPoint::iid, (void**)&cnt) == kResultTrue)
+									{
+										if (cnt != NULL)
+										{
+											cm->connect(cnt);
+											cnt->connect(cm);
+										}
+									}
+							}
+							controller->initialize(0);
+						}
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return false;
+	}
+
+	return true;
+}
+
+void VST3PluginFilter::resetPlugin()
+{
+	if (controller == NULL) {
+		return;
+	}
+
+	int pcount = controller->getParameterCount();
+
+	for (size_t i = 0; i < pcount; i++)
+	{
+		ParameterInfo pinfo;
+		int c = 0;
+		controller->getParameterInfo(i, pinfo);
+
+		if (wcscmp(pinfo.title, L"Bypass") == 0)
+		{
+			controller->setParamNormalized(pinfo.id, 0);
+		}
+	}
+
+	IUnitInfo* unit = 0;
+	if (component->queryInterface(IUnitInfo::iid, (void**)&unit) == kResultOk)
+	{
+		if (unit != NULL)
+		{
+			long uc = unit->getUnitCount();
+			for (size_t i = 0; i < uc; i++)
+			{
+				long lc = unit->getProgramListCount();
+				for (size_t i = 0; i < lc; i++)
+				{
+					ProgramListInfo inf = { 0 };
+					unit->getProgramListInfo(i, inf);
+
+					long lp = inf.programCount;
+					for (size_t i = 0; i < lp; i++)
+					{
+						String128 pn;
+						unit->getProgramName(inf.id, i, pn);
+
+						if (wcscmp(pn, L"Default") == 0)
+						{
+							for (size_t o = 0; o < pcount; o++)
+							{
+								ParameterInfo pinfo = { 0 };
+								controller->getParameterInfo(o, pinfo);
+
+								if (wcscmp(pinfo.title, L"Program") == 0)
+								{
+									//Reset program parameter to default value
+									controller->setParamNormalized(pinfo.id, i);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
 	channelCount = channelNames.size();
@@ -71,46 +174,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		if (strcmp(cl.category, kVstAudioEffectClass) == 0)
 		{
-			try
-			{
-				if (fact->createInstance(cl.cid, FUnknown::iid, (void**) &component) == kResultTrue)
-				{
-					if (component != 0)
-					{
-						component->initialize(0);
-
-						if (component->queryInterface(IEditController::iid, (void**) &controller) != kResultTrue)
-						{
-							TUID controlID = { 0 };
-
-							if (component->getControllerClassId(controlID) == kResultOk)
-							if (fact->createInstance(controlID, IEditController::iid, (void**) &controller) == kResultTrue)
-							if (controller != NULL) {
-								if (component->queryInterface(Vst::IConnectionPoint::iid, (void**) &cm) == kResultTrue) {
-									if (cm != NULL)
-										if (controller->queryInterface(Vst::IConnectionPoint::iid,(void**) &cnt) == kResultTrue)
-										{
-											if (cnt != NULL)
-											{
-												cm->connect(cnt);
-												cnt->connect(cm);
-											}
-										}
-								}
-								controller->initialize(0);
-							}
-						}
-					}
-				}
-				else {
-					goto LEAVE_;
-				}
-			}
-			catch (...)
-			{
-				TraceF(L"VST3: initializing plugin crashed!");
+			if (!InitPlugin(cl))
 				goto LEAVE_;
-			}
 			break;
 		}
 	}
@@ -220,63 +285,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	}
 	else
 	{
-		if (controller == NULL) {
-			goto LEAVE_;
-		}
-
-		int pcount = controller->getParameterCount();
-
-		for (size_t i = 0; i < pcount; i++)
-		{
-			ParameterInfo pinfo;
-			int c = 0;
-			controller->getParameterInfo(i, pinfo);
-
-			if (wcscmp(pinfo.title, L"Bypass") == 0)
-			{
-				controller->setParamNormalized(pinfo.id, 0);
-			}
-		}
-
-		IUnitInfo* unit = 0;
-		if (component->queryInterface(IUnitInfo::iid, (void**) &unit) == kResultOk)
-		{
-			if (unit != NULL)
-			{
-				long uc = unit->getUnitCount();
-				for (size_t i = 0; i < uc; i++)
-				{
-					long lc = unit->getProgramListCount();
-					for (size_t i = 0; i < lc; i++)
-					{
-						ProgramListInfo inf = { 0 };
-						unit->getProgramListInfo(i, inf);
-
-						long lp = inf.programCount;
-						for (size_t i = 0; i < lp; i++)
-						{
-							String128 pn;
-							unit->getProgramName(inf.id, i, pn);
-
-							if (wcscmp(pn, L"Default") == 0)
-							{
-								for (size_t o = 0; o < pcount; o++)
-								{
-									ParameterInfo pinfo = { 0 };
-									controller->getParameterInfo(o, pinfo);
-
-									if (wcscmp(pinfo.title, L"Program") == 0)
-									{
-										//Reset program parameter to default value
-										controller->setParamNormalized(pinfo.id, i);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		resetPlugin();
 	}
 
 	bypass = false;

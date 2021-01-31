@@ -517,11 +517,6 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	if (pfnAddPage == 0 || lParam == 0)
 		return E_INVALIDARG;
 
-	wchar_t* eguid = &((AudioFXExtensionParams*)(lParam))->pwstrEndpointID[17]; //Soundcard GUID
-
-	if (((wchar_t*)(eguid[0])) == L"")
-		return E_INVALIDARG;
-
 	cpath = RegistryHelper::readValue(APP_REGPATH, L"ConfigPath");
 
 	if (cpath == L"")
@@ -581,7 +576,10 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 			}
 
 			if (key == L"Device") {
-				lock = (value.find(eguid) != std::wstring::npos ? false : true);
+				AudioFXExtensionParams* fx = (AudioFXExtensionParams*)lParam;
+				if (fx->pwstrEndpointID || value.size() > 0) {
+					lock = (value.find(fx->pwstrEndpointID[17]) != std::wstring::npos ? false : true);
+				}
 			}
 
 			if ((lock == false) & key == L"APO")

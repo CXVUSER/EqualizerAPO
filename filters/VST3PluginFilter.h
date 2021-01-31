@@ -216,7 +216,8 @@ public:
 	bool getInPlace() override { return false; }
 	std::vector<std::wstring> initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames) override;
 	void process(float** output, float** input, unsigned frameCount) override;
-
+	bool InitPlugin(PClassInfo cl);
+	void resetPlugin();
 private:
 
 	FilterEngine* _eapo = 0;
