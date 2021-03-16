@@ -80,39 +80,38 @@ public:
 	
 private:
 	
-	GUID _effectguid = GUID_NULL;
-	FilterEngine* _eapo = 0;
-	size_t channelCount = 0;
+	GUID m_Eguid = GUID_NULL;
+	FilterEngine* m_Eapo = 0;
+	size_t m_ch_cnt = 0;
+
+	IAudioProcessingObject* m_IAudObj = 0;
+	IAudioProcessingObjectRT* m_IAudRT = 0;
+	IAudioProcessingObjectConfiguration* m_IAudConf = 0;
+
+	APO_CONNECTION_PROPERTY m_cp_in = { 0 };
+	APO_CONNECTION_PROPERTY* m_cp_in_p = &m_cp_in;
+	APO_CONNECTION_PROPERTY m_cp_out = { 0 };
+	APO_CONNECTION_PROPERTY* m_cp_out_p = &m_cp_out;
+	APO_CONNECTION_DESCRIPTOR m_cd_in;
+	APO_CONNECTION_DESCRIPTOR* m_cd_in_p = &m_cd_in;
+	APO_CONNECTION_DESCRIPTOR m_cd_out;
+	APO_CONNECTION_DESCRIPTOR* m_cd_out_p = &m_cd_out;
+
+	APOInitSystemEffects2 m_initstruct = { 0 };
+	IAudioMediaType* m_iAudType = 0;
+	IMMDeviceEnumerator* m_pEnumerator = 0;
+	IMMDeviceCollection* m_pCollection = 0;
+	IMMDevice* m_pEndpoint = 0;
+	IPropertyStore* m_pProps = 0;
+	IPropertyStoreFX* m_IFXProp = 0;
+	APO_REG_PROPERTIES* m_aProp = 0;
+	IAudioClient* m_iAudClient = 0;
+	
+	//AudioSamples buffer
+	float* m_bIn = 0;
+	float* m_bOut = 0;
 
 	bool bypass = true;
 	bool reportCrash = true;
-
-	IAudioProcessingObject* APO = 0;
-	IAudioProcessingObjectRT* APORT = 0;
-	IAudioProcessingObjectConfiguration* APOCfg = 0;
-	APO_CONNECTION_PROPERTY pIn_ = { 0 };
-	APO_CONNECTION_PROPERTY* pIn = &pIn_;
-	APO_CONNECTION_PROPERTY pOut_ = { 0 };
-	APO_CONNECTION_PROPERTY* pOut = &pOut_;
-	APO_CONNECTION_DESCRIPTOR coDeskIn_;
-	APO_CONNECTION_DESCRIPTOR* coDeskIn = &coDeskIn_;
-	APO_CONNECTION_DESCRIPTOR coDeskOut_;
-	APO_CONNECTION_DESCRIPTOR* coDeskOut = &coDeskOut_;
-	APOInitSystemEffects2 initstruct = { 0 };
-	IAudioMediaType* iAudType = 0;
-	IMMDeviceEnumerator* pEnumerator = 0;
-	IMMDeviceCollection* pCollection = 0;
-	IMMDevice* pEndpoint = 0;
-	IPropertyStore* pProps = 0;
-
-	IPropertyStoreFX* fxprop = 0;
-
-	APO_REG_PROPERTIES* APOInfo = 0;
-	IAudioClient* iAudClient = 0;
-	
-	//AudioSamples buffer
-	float* bufferinput = 0;
-	float* bufferoutput = 0;
-
 };
 #pragma AVRT_VTABLES_END

@@ -20,14 +20,14 @@
 #include "IPropStore.h"
 
 IPropertyStoreFX::IPropertyStoreFX(std::wstring& Device, REGSAM dwAccess)
-	:_guid(Device), _dwAcc(dwAccess)
+	:m_guid(Device), m_dwAcc(dwAccess)
 {
-	InitializeCriticalSection(&cr);
+	InitializeCriticalSection(&m_cr);
 };
 
 IPropertyStoreFX::~IPropertyStoreFX() {
-	DeleteCriticalSection(&cr);
-	RegCloseKey(reg);
+	DeleteCriticalSection(&m_cr);
+	RegCloseKey(m_Reg);
 	//RegCloseKey(regProp);
 }
 
@@ -38,15 +38,15 @@ HRESULT IPropertyStoreFX::QueryInterface(const IID& riid, void** ppvObject) {
 };
 
 ULONG IPropertyStoreFX::AddRef() {
-	return InterlockedIncrement(&ref);
+	return InterlockedIncrement(&m_Ref);
 };
 
 ULONG IPropertyStoreFX::Release() {
-	if (InterlockedDecrement(&ref) == 1) {
+	if (InterlockedDecrement(&m_Ref) == 1) {
 		this->~IPropertyStoreFX();
 		return 0;
 	}
-	return ref;
+	return m_Ref;
 };
 
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
@@ -55,7 +55,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	auto RET_DEVICE_STRING = [pv](wchar_t* p) {
 		if (p == 0)
 			return E_FAIL;
-		wchar_t* name = (wchar_t*) CoTaskMemAlloc(240);
+		auto name = (wchar_t*) CoTaskMemAlloc(_MAX_PATH);
 		if (name == 0)
 			return E_OUTOFMEMORY;
 		memset(name, 0, 240);
@@ -65,7 +65,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		return S_OK;
 	};
 
-	EnterCriticalSection(&cr);
+	EnterCriticalSection(&m_cr);
 
 	HRESULT hr = E_FAIL;
 
@@ -74,16 +74,14 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		goto LEAVE_;
 	}
 
-	wchar_t keystr[128] = { 0 };
-
 	memset(pv, 0, sizeof(PROPVARIANT));
 
 	if (key == PKEY_AudioEndpoint_GUID)
 	{
-		CLSID cl = GUID_NULL;
+		auto cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if (FAILED(CLSIDFromString(_guid.c_str(), &cl))) 
+		if (FAILED(CLSIDFromString(m_guid.c_str(), &cl))) 
 		{
 			hr = E_FAIL;
 			goto LEAVE_;
@@ -114,6 +112,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 			goto LEAVE_;
 	} //...
 
+	wchar_t keystr[128] = { 0 };
+
 	//Convert CLSID to GUID string
 	hr = StringCchPrintf(keystr, 128, L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x},%d", key.fmtid.Data1,
 		key.fmtid.Data2,
@@ -136,7 +136,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	DWORD type = 0;
 	DWORD size = 0;
 
-	LSTATUS status = RegQueryValueExW(reg, keystr, 0, &type, 0, &size);
+	auto status = RegQueryValueExW(m_Reg, keystr, 0, &type, 0, &size);
 
 	if (status) {
 		hr = E_FAIL;
@@ -150,11 +150,10 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_SZ)
 	{
-		DWORD sdata = size;
+		auto sdata = size;
 
-		wchar_t* x = (wchar_t*) CoTaskMemAlloc(size);
-
-		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
+		auto x = (wchar_t*) CoTaskMemAlloc(size);
+		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
 
 		if (!status) {
 			pv->vt = VT_LPWSTR;
@@ -166,11 +165,11 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_DWORD)
 	{
-		DWORD sdata = size;
+		auto sdata = size;
 
 		if (size == 4)
 		{
-			LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &sdata);
+			auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &sdata);
 
 			if (!status) {
 				pv->vt = VT_UI4;
@@ -182,23 +181,21 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_BINARY)
 	{
-		DWORD sdata = size;
+		auto sdata = size;
 		PROPVARIANT pvdata = { 0 };
 
-		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_BINARY, 0, &pvdata, &sdata);
+		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_BINARY, 0, &pvdata, &sdata);
 
 		if (!status)
-		{
 			hr = DeserializePropVarinat(type, &pvdata, size, pv);
-		}
 		goto LEAVE_;
 	}
 
 	if (type == REG_MULTI_SZ)
 	{
-		DWORD sdata = size;
+		auto sdata = size;
 		LPVOID str = CoTaskMemAlloc(size);
-		LSTATUS status = RegGetValueW(reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
+		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
 
 		if (!status) {
 			hr = InitPropVariantFromStringAsVector((PCWSTR) str, pv);
@@ -216,7 +213,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		size_t s = size + 2;
 		DWORD sdata;
 
-		void* vm = CoTaskMemAlloc(s);
+		auto vm = CoTaskMemAlloc(s);
 
 		if (vm)
 		{
@@ -235,13 +232,13 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 			memset(vm, 0, s2);
 
-			LSTATUS status = RegGetValueW(reg, 0, keystr, 0x6, 0, vm, &sdata);
+			auto status = RegGetValueW(m_Reg, 0, keystr, 0x6, 0, vm, &sdata);
 
 			if (status != ERROR_FILE_NOT_FOUND) {
 				if (status == ERROR_SUCCESS)
 				{
 					wchar_t buf[520];
-					memset(buf, 0, 208);
+					memset(buf, 0, 520);
 
 					if (SHLoadIndirectString((PCWSTR) vm, buf, 260, 0) != E_FAIL)
 					{
@@ -268,76 +265,83 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	}
 
 	LEAVE_:
-	LeaveCriticalSection(&this->cr);
+	LeaveCriticalSection(&this->m_cr);
 	return hr;
 };
 
 bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 {
-	HRESULT hr = S_OK;
-	bool result = false;
-	EDataFlow devicetype = eRender;
+	auto hr = S_OK;
+	auto result = false;
+	auto devicetype = eRender;
 	IMMDeviceEnumerator* enumemator = 0;
 
-	EnterCriticalSection(&cr);
+	EnterCriticalSection(&m_cr);
 
 	std::wstring regfx = MM_DEV_AUD_REG_PATH;
 	//std::wstring regprop = MM_DEV_AUD_REG_PATH;
 
-	if ((SUCCEEDED(CoCreateInstance
+	hr = CoCreateInstance
 	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		(void**) &enumemator
-	))) | enumemator != 0)
-	{
-		IMMDevice* imd = 0;
-		IMMEndpoint* ime = 0;
-		std::wstring fulldevice = L"{0.0.0.00000000}.";
-		fulldevice += _guid;
+		(void**)&enumemator
+	);
 
-		hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
-		if ((SUCCEEDED(hr)) | imd != 0)
+	if (SUCCEEDED(hr)) {
+		if (enumemator != 0)
 		{
-			if (SUCCEEDED(imd->QueryInterface(__uuidof(IMMEndpoint), (void**) &ime)))
+			IMMDevice* imd = 0;
+				IMMEndpoint* ime = 0;
+				std::wstring fulldevice = L"{0.0.0.00000000}.";
+			fulldevice += m_guid;
+
+			hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
+			if ((SUCCEEDED(hr)))
 			{
-				if (ime == 0)
-					return false;
-				if (FAILED(ime->GetDataFlow(&devicetype)))
+				if (imd == 0)
 					return false;
 
-				switch (devicetype)
+				if (SUCCEEDED(imd->QueryInterface(__uuidof(IMMEndpoint), (void**)&ime)))
 				{
-				case eAll:
-					return false;
-				case eRender:
-					regfx += L"Render\\" + _guid + L"\\FxProperties";
-					break;
-				case eCapture:
-					regfx += L"Capture\\" + _guid + L"\\FxProperties";
-					break;
-				default:
-					break;
-				}
+					if (ime == 0)
+						return false;
+					if (FAILED(ime->GetDataFlow(&devicetype)))
+						return false;
 
+					switch (devicetype)
+					{
+					case eAll:
+						return false;
+					case eRender:
+						regfx += L"Render\\" + m_guid + L"\\FxProperties";
+						break;
+					case eCapture:
+						regfx += L"Capture\\" + m_guid + L"\\FxProperties";
+						break;
+					default:
+						break;
+					}
+
+					/*
+					regprop += L"Render\\" + _guid + L"\\Properties";
+					regprop += L"Capture\\" + _guid + L"\\Properties";
+					*/
+				}
+				ime->Release();
+				imd->Release();
+
+				if (m_Reg = RegistryHelper::openKey(regfx, m_dwAcc))
+					result = true;
 				/*
-				regprop += L"Render\\" + _guid + L"\\Properties";
-				regprop += L"Capture\\" + _guid + L"\\Properties";
+				if (!(regProp = RegistryHelper::openKey(regProp, _dwAcc)))
+					return false;
 				*/
 			}
-			ime->Release();
-			imd->Release();
-
-			if (reg = RegistryHelper::openKey(regfx, _dwAcc))
-				result = true;
-			/*
-			if (!(regProp = RegistryHelper::openKey(regProp, _dwAcc)))
-				return false;
-			*/
 		}
 	}
 
-	LeaveCriticalSection(&cr);
+	LeaveCriticalSection(&m_cr);
 	return result;
 }
 
@@ -359,8 +363,8 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		return S_OK;
 	}
 	else if (type == REG_SZ) {
-		size_t s = wcslen((wchar_t*)src) * 2;
-		LPWSTR mem = (LPWSTR)CoTaskMemAlloc(s);
+		auto s = wcslen((wchar_t*)src) * 2;
+		auto mem = (LPWSTR)CoTaskMemAlloc(s);
 		if (!mem)
 			return E_FAIL;
 
@@ -371,13 +375,13 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		return S_OK;
 	}
 
-	PROPVARIANT* p = (PROPVARIANT*)src;
-	VARTYPE t = p->vt;
+	auto p = (PROPVARIANT*) src;
+	auto t = p->vt;
 
 	if (t == VT_EMPTY) {
 		size_t s = cb - 8;
 
-		void* mem = CoTaskMemAlloc(s);
+		auto mem = CoTaskMemAlloc(s);
 		if (!mem)
 			return E_FAIL;
 
@@ -390,7 +394,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 	}
 	else if (t == VT_BLOB) {
 		size_t s = cb - 8;
-		void* mem = CoTaskMemAlloc(s);
+		auto mem = CoTaskMemAlloc(s);
 		if (!mem)
 			return E_FAIL;
 
@@ -426,9 +430,9 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 	break;
 	case VT_LPSTR:
 	{
-		char* str = (char*) &p->pbVal;
-		size_t s = strlen(str);
-		char* val = (char*) CoTaskMemAlloc(s);
+		auto str = (char*)&p->pbVal;
+		auto s = strlen(str);
+		auto val = (char*)CoTaskMemAlloc(s);
 		if (!val)
 			return E_FAIL;
 
@@ -439,8 +443,8 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 	break;
 	case VT_BSTR:
 	{
-		size_t s = wcslen(p->bstrVal + 1);
-		void* mem = CoTaskMemAlloc(s * 2);
+		auto s = wcslen(p->bstrVal + 1);
+		auto mem = CoTaskMemAlloc(s * 2);
 		if (!mem)
 			return E_FAIL;
 		memcpy(mem, &p->bstrVal, s * 2);
@@ -451,7 +455,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 	break;
 	case VT_CLSID:
 	{
-		GUID* g = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+		auto g = (GUID*)CoTaskMemAlloc(sizeof(GUID));
 		if (!g)
 			return E_FAIL;
 		memcpy(g, &p->pbVal, sizeof(GUID));
@@ -462,4 +466,3 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 	};
 	return S_OK;
 }
-

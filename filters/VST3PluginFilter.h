@@ -59,8 +59,8 @@ public:
 
 	settings() {};
 	~settings() {
-		if (buf != 0)
-			free(buf);
+		if (m_buf != 0)
+			free(m_buf);
 	};
 
 	virtual tresult PLUGIN_API queryInterface(const TUID _iid, void** obj) override {
@@ -84,20 +84,20 @@ public:
 	virtual tresult PLUGIN_API read(void* buffer, int32 numBytes, int32* numBytesRead = 0) override {
 		if (buffer == NULL && numBytes == NULL)
 			goto LEAVE_;
-		if (!buf)
+		if (!m_buf)
 			goto LEAVE_;
-		if (sk > numBytes)
+		if (m_sk > numBytes)
 			goto LEAVE_;
-		if (numBytes > s)
-			numBytes -= (numBytes - s);
+		if (numBytes > m_s)
+			numBytes -= (numBytes - m_s);
 
 		__try {
-			memcpy(buffer, &buf[sk], numBytes);
+			memcpy(buffer, &m_buf[m_sk], numBytes);
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER) {
 			goto LEAVE_;
 		}
-		sk += numBytes;
+		m_sk += numBytes;
 			
 		__try {
 			if (numBytesRead)
@@ -118,18 +118,18 @@ public:
 		if (buffer == NULL && numBytes == NULL)
 			goto LEAVE_;
 		
-		buf = (char*) realloc(buf, numBytes + s);
-		if (buf == NULL)
+		m_buf = (char*) realloc(m_buf, numBytes + m_s);
+		if (m_buf == NULL)
 			goto LEAVE_;
 		__try {
-			memcpy(buf + sk, buffer, numBytes);
+			memcpy(m_buf + m_sk, buffer, numBytes);
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER) {
 			goto LEAVE_;
 		}
 
-		s += numBytes;
-		sk += numBytes;
+		m_s += numBytes;
+		m_sk += numBytes;
 		__try {
 			if (numBytesWritten)
 				*numBytesWritten = numBytes;
@@ -146,15 +146,15 @@ public:
 	//Set current position in the stream
 	virtual tresult PLUGIN_API seek(int64 pos, int32 mode, int64* result = 0) override {
 		if (mode == kIBSeekSet)
-			sk = pos;
+			m_sk = pos;
 		else if(mode == kIBSeekCur)
-			sk += pos;
+			m_sk += pos;
 		else if(mode == kIBSeekEnd)
-			sk = s;
+			m_sk = m_s;
 
 		__try {
 			if (result != 0)
-				*result = sk;
+				*result = m_sk;
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER) {
 			return kResultFalse;
@@ -165,7 +165,7 @@ public:
 	virtual tresult PLUGIN_API tell(int64* pos) override {
 		if (pos != 0) {
 			__try {
-				*pos = sk;
+				*pos = m_sk;
 			}
 			__except (EXCEPTION_EXECUTE_HANDLER) {
 				goto LEAVE_;
@@ -179,7 +179,7 @@ public:
 	virtual tresult PLUGIN_API getStreamSize(int64& size) override {
 		if (&size != 0) {
 			__try {
-				size = s;
+				size = m_s;
 			}
 			__except (EXCEPTION_EXECUTE_HANDLER) {
 				goto LEAVE_;
@@ -191,14 +191,14 @@ public:
 	};
 
 	virtual tresult PLUGIN_API setStreamSize(int64 size) override {
-		s = size;
+		m_s = size;
 		return kResultTrue;
 	};
 
 private:
-	char* buf = 0;
-	int64 sk = 0;
-	int64 s = 0;
+	char* m_buf = 0;
+	int64 m_sk = 0;
+	int64 m_s = 0;
 };
 
 #pragma AVRT_VTABLES_BEGIN
@@ -220,29 +220,29 @@ public:
 	void resetPlugin();
 private:
 
-	FilterEngine* _eapo = 0;
-	std::wstring _path;
-	std::wstring _settings;
-	size_t channelCount = 0;
+	FilterEngine* m_Eapo = 0;
+	std::wstring m_Path;
+	std::wstring m_Settings;
+	size_t m_ChannelCount = 0;
 
-	IComponent* component;
-	IAudioProcessor* processor;
-	IPluginFactory* fact;
-	IEditController* controller;
+	IComponent* m_IComponent;
+	IAudioProcessor* m_IAudprocessor;
+	IPluginFactory* m_Ifact;
+	IEditController* m_IEcontroller;
 
 	//Audio bus
-	AudioBusBuffers input_ = {};
-	AudioBusBuffers output_ = {};
+	AudioBusBuffers m_In = {};
+	AudioBusBuffers m_Out = {};
 
 	//Conenction
-	Steinberg::Vst::IConnectionPoint* cm;
-	Steinberg::Vst::IConnectionPoint* cnt;
+	Steinberg::Vst::IConnectionPoint* m_Icn_comp;
+	Steinberg::Vst::IConnectionPoint* m_Icn_contr;
 
-	ProcessData pcd = {};
+	ProcessData m_Pcd = {};
 
-	Steinberg::Vst::ProcessContext cont = {};
+	Steinberg::Vst::ProcessContext m_p_ctx = {};
 
-	HMODULE Plugindll;
+	HMODULE m_Plugindll;
 
 	bool bypass = true;
 	bool reportCrash = true;

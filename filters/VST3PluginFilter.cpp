@@ -23,38 +23,39 @@
 using namespace std;
 
 VST3PluginFilter::VST3PluginFilter(FilterEngine* e, std::wstring path, std::wstring settings)
-	: _eapo(e), _path(path), _settings(settings) {
+	: m_Eapo(e), m_Path(path), m_Settings(settings) {
 }
 
 bool VST3PluginFilter::InitPlugin(PClassInfo cl) {
 
 	__try {
-		if (fact->createInstance(cl.cid, FUnknown::iid, (void**)&component) == kResultTrue)
+		if (m_Ifact->createInstance(cl.cid, FUnknown::iid, (void**)&m_IComponent) == kResultTrue)
 		{
-			if (component == 0)
-
-				component->initialize(0);
-
-			if (component->queryInterface(IEditController::iid, (void**)&controller) != kResultTrue)
+			if (m_IComponent != 0)
 			{
-				TUID controlID = { 0 };
+				m_IComponent->initialize(0);
 
-				if (component->getControllerClassId(controlID) == kResultOk)
-					if (fact->createInstance(controlID, IEditController::iid, (void**)&controller) == kResultTrue)
-						if (controller != NULL) {
-							if (component->queryInterface(Vst::IConnectionPoint::iid, (void**)&cm) == kResultTrue) {
-								if (cm != NULL)
-									if (controller->queryInterface(Vst::IConnectionPoint::iid, (void**)&cnt) == kResultTrue)
-									{
-										if (cnt != NULL)
+				if (m_IComponent->queryInterface(IEditController::iid, (void**)&m_IEcontroller) != kResultTrue)
+				{
+					TUID controlID = { 0 };
+
+					if (m_IComponent->getControllerClassId(controlID) == kResultOk)
+						if (m_Ifact->createInstance(controlID, IEditController::iid, (void**)&m_IEcontroller) == kResultTrue)
+							if (m_IEcontroller != NULL) {
+								if (m_IComponent->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_comp) == kResultTrue) {
+									if (m_Icn_comp != NULL)
+										if (m_IEcontroller->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_contr) == kResultTrue)
 										{
-											cm->connect(cnt);
-											cnt->connect(cm);
+											if (m_Icn_contr != NULL)
+											{
+												m_Icn_comp->connect(m_Icn_contr);
+												m_Icn_contr->connect(m_Icn_comp);
+												m_IEcontroller->initialize(0);
+											}
 										}
-									}
+								}
 							}
-							controller->initialize(0);
-						}
+				}
 			}
 		}
 		else {
@@ -70,39 +71,36 @@ bool VST3PluginFilter::InitPlugin(PClassInfo cl) {
 
 void VST3PluginFilter::resetPlugin()
 {
-	if (controller == NULL) {
+	if (m_IEcontroller == NULL)
 		return;
-	}
 
-	int pcount = controller->getParameterCount();
+	auto pcount = m_IEcontroller->getParameterCount();
 
 	for (size_t i = 0; i < pcount; i++)
 	{
 		ParameterInfo pinfo;
 		int c = 0;
-		controller->getParameterInfo(i, pinfo);
+		m_IEcontroller->getParameterInfo(i, pinfo);
 
 		if (wcscmp(pinfo.title, L"Bypass") == 0)
-		{
-			controller->setParamNormalized(pinfo.id, 0);
-		}
+			m_IEcontroller->setParamNormalized(pinfo.id, 0);
 	}
 
 	IUnitInfo* unit = 0;
-	if (component->queryInterface(IUnitInfo::iid, (void**)&unit) == kResultOk)
+	if (m_IComponent->queryInterface(IUnitInfo::iid, (void**)&unit) == kResultOk)
 	{
 		if (unit != NULL)
 		{
-			long uc = unit->getUnitCount();
+			auto uc = unit->getUnitCount();
 			for (size_t i = 0; i < uc; i++)
 			{
-				long lc = unit->getProgramListCount();
+				auto lc = unit->getProgramListCount();
 				for (size_t i = 0; i < lc; i++)
 				{
 					ProgramListInfo inf = { 0 };
 					unit->getProgramListInfo(i, inf);
 
-					long lp = inf.programCount;
+					auto lp = inf.programCount;
 					for (size_t i = 0; i < lp; i++)
 					{
 						String128 pn;
@@ -113,13 +111,10 @@ void VST3PluginFilter::resetPlugin()
 							for (size_t o = 0; o < pcount; o++)
 							{
 								ParameterInfo pinfo = { 0 };
-								controller->getParameterInfo(o, pinfo);
+								m_IEcontroller->getParameterInfo(o, pinfo);
 
 								if (wcscmp(pinfo.title, L"Program") == 0)
-								{
-									//Reset program parameter to default value
-									controller->setParamNormalized(pinfo.id, i);
-								}
+									m_IEcontroller->setParamNormalized(pinfo.id, i);	//Reset program parameter to default value
 							}
 						}
 					}
@@ -131,16 +126,15 @@ void VST3PluginFilter::resetPlugin()
 
 std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
-	channelCount = channelNames.size();
+	m_ChannelCount = channelNames.size();
 	ProcessSetup setup{ kRealtime, kSample32,0, sampleRate };
 
-	if (channelCount == 0 || _path == L"") {
+	if (m_ChannelCount == 0 || m_Path == L"")
 		goto LEAVE_;
-	}
 
-	Plugindll = LoadLibraryW(_path.data());
-	if (Plugindll != 0) {
-		TraceF(L"VST3: Load plugin: %s", _path.data());
+	m_Plugindll = LoadLibraryW(m_Path.data());
+	if (m_Plugindll != 0) {
+		TraceF(L"VST3: Load plugin: %s", m_Path.data());
 	}
 	else {
 		goto LEAVE_;
@@ -149,28 +143,25 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	unsigned int frameCount = sampleRate / 100;
 
 	//get global functions
-	auto _InitDll = func(InitModuleFunc, Plugindll, "InitDll");
-	auto _GetPluginFactory = func(GetPluginFactory, Plugindll, "GetPluginFactory");
+	auto _InitDll = func(InitModuleFunc, m_Plugindll, "InitDll");
+	auto _GetPluginFactory = func(GetPluginFactory, m_Plugindll, "GetPluginFactory");
 
 	//Initialize Plugin
-	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0) {
+	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0)
 		goto LEAVE_;
-	}
 
-	if ((fact = _GetPluginFactory()) == 0) {
+	if ((m_Ifact = _GetPluginFactory()) == 0)
 		goto LEAVE_;
-	}
 
-	int classes = fact->countClasses();
+	auto classes = m_Ifact->countClasses();
 
-	if (classes == 0) {
+	if (classes == 0)
 		goto LEAVE_;
-	}
 
 	for (size_t i = 0; i < classes; i++)
 	{
 		PClassInfo cl;
-		fact->getClassInfo(i, &cl);
+		m_Ifact->getClassInfo(i, &cl);
 
 		if (strcmp(cl.category, kVstAudioEffectClass) == 0)
 		{
@@ -180,70 +171,66 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		}
 	}
 
-	if (component->queryInterface(IAudioProcessor::iid, (void**) &processor) == kResultFalse) {
-		if (processor == 0)
+	if (m_IComponent->queryInterface(IAudioProcessor::iid, (void**) &m_IAudprocessor) == kResultFalse)
+		if (m_IAudprocessor == 0)
 			goto LEAVE_;
-	}
 
-	int buscountinp = component->getBusCount(kAudio, kInput);
-	int buscountout = component->getBusCount(kAudio, kOutput);
+	auto buscountinp = m_IComponent->getBusCount(kAudio, kInput);
+	auto buscountout = m_IComponent->getBusCount(kAudio, kOutput);
 
-	processor->setProcessing(false);
-	component->setActive(false);
+	m_IAudprocessor->setProcessing(false);
+	m_IComponent->setActive(false);
 
-	cont.tempo = 120; //BPM def temp
-	cont.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
+	m_p_ctx.tempo = 120; //BPM def temp
+	m_p_ctx.sampleRate = sampleRate; //samplerate in hZ (44100 48000 96000 192000 etc...)
 
-	cont.state = ProcessContext::StatesAndFlags::kPlaying;
+	m_p_ctx.state = ProcessContext::StatesAndFlags::kPlaying;
 
-	pcd.processContext = &cont;
-	pcd.numInputs = buscountinp;
-	pcd.numOutputs = buscountout;
+	m_Pcd.processContext = &m_p_ctx;
+	m_Pcd.numInputs = buscountinp;
+	m_Pcd.numOutputs = buscountout;
 
-	pcd.processMode = kRealtime;
-	pcd.symbolicSampleSize = kSample32;
+	m_Pcd.processMode = kRealtime;
+	m_Pcd.symbolicSampleSize = kSample32;
 
-	pcd.inputs = &input_;
-	pcd.outputs = &output_;
+	m_Pcd.inputs = &m_In;
+	m_Pcd.outputs = &m_Out;
 
 	//setting channels
-	SpeakerArrangement arr = _eapo->getChannelMask();
+	SpeakerArrangement arr = m_Eapo->getChannelMask();
 	SpeakerArrangement fake = KSAUDIO_SPEAKER_STEREO;
 
-	if (processor->setBusArrangements(&arr, 1, 0, 0) != kResultOk)
+	if (m_IAudprocessor->setBusArrangements(&arr, 1, 0, 0) != kResultOk)
 	{
-		processor->setBusArrangements(&fake, 1, 0, 0);
-		input_.numChannels = 2;
+		m_IAudprocessor->setBusArrangements(&fake, 1, 0, 0);
+		m_In.numChannels = 2;
 	}
 	else
 	{
-		input_.numChannels = channelCount;
+		m_In.numChannels = m_ChannelCount;
 	}
 
-	if (processor->setBusArrangements(0, 0, &arr, 1) != kResultOk)
+	if (m_IAudprocessor->setBusArrangements(0, 0, &arr, 1) != kResultOk)
 	{
-		processor->setBusArrangements(0, 0, &fake, 1);
-		output_.numChannels = 2;
+		m_IAudprocessor->setBusArrangements(0, 0, &fake, 1);
+		m_Out.numChannels = 2;
 	}
 	else
 	{
-		output_.numChannels = channelCount;
+		m_Out.numChannels = m_ChannelCount;
 	}
 
-	setup.maxSamplesPerBlock = (input_.numChannels != channelCount) ? (frameCount * 2) :
-		(frameCount * channelCount);
+	setup.maxSamplesPerBlock = (m_In.numChannels != m_ChannelCount) ? (frameCount * 2) :
+		(frameCount * m_ChannelCount);
 
-	if (processor->setupProcessing(setup) == kResultFalse) {
+	if (m_IAudprocessor->setupProcessing(setup) == kResultFalse)
 		goto LEAVE_;
-	}
 
-	if (component->setActive(true) == kResultFalse) {
+	if (m_IComponent->setActive(true) == kResultFalse)
 		goto LEAVE_;
-	}
 
-	if (processor->setProcessing(true) == kResultFalse) {
+	if (m_IAudprocessor->setProcessing(true) == kResultFalse)
 		goto LEAVE_;
-	}
 
 	auto actbus = [](IComponent* component, int i,int d) {
 		BusInfo inf = { 0 };
@@ -254,33 +241,32 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	};
 
 	for (size_t i = 0; i < buscountinp; i++)
-		actbus(component, buscountinp, kInput);
+		actbus(m_IComponent, buscountinp, kInput);
 	for (size_t i = 0; i < buscountout; i++)
-		actbus(component, buscountout,kOutput);
+		actbus(m_IComponent, buscountout,kOutput);
 
-	if (_settings.size() > 0)
+	if (m_Settings.size() > 0)
 	{
 		settings set;
 		DWORD bufSize = 0;
 
-		CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
-		BYTE* buf = reinterpret_cast<BYTE*>(malloc(bufSize));
+		CryptStringToBinaryW(m_Settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
+		auto buf = reinterpret_cast<BYTE*>(malloc(bufSize));
 		if (buf) {
-			if (CryptStringToBinaryW(_settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
+			if (CryptStringToBinaryW(m_Settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
 			{
 				set.write(buf, bufSize, 0);
 
 				try
 				{
-					component->setState(&set);
+					m_IComponent->setState(&set);
 				}
 				catch (...)
 				{
 					TraceF(L"VST3: setState plugin failed!");
 				}
 			}
-			if (buf)
-				free(buf);
+			free(buf);
 		}
 	}
 	else
@@ -299,17 +285,17 @@ void VST3PluginFilter::process(float** output, float** input, unsigned frameCoun
 {
 	if (bypass)
 	{
-		for (unsigned i = 0; i < channelCount; i++)
+		for (unsigned i = 0; i < m_ChannelCount; i++)
 			memcpy(output[i], input[i], frameCount * sizeof(float));
 		return;
 	}
 
 	__try
 	{
-		output_.channelBuffers32 = output;
-		input_.channelBuffers32 = input;
-		pcd.numSamples = frameCount;
-		processor->process(pcd);
+		m_Out.channelBuffers32 = output;
+		m_In.channelBuffers32 = input;
+		m_Pcd.numSamples = frameCount;
+		m_IAudprocessor->process(m_Pcd);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -319,7 +305,7 @@ void VST3PluginFilter::process(float** output, float** input, unsigned frameCoun
 			reportCrash = false;
 		}
 
-		for (unsigned i = 0; i < channelCount; i++)
+		for (unsigned i = 0; i < m_ChannelCount; i++)
 			memcpy(output[i], input[i], frameCount * sizeof(float));
 		bypass = true;
 	}
@@ -330,33 +316,33 @@ VST3PluginFilter::~VST3PluginFilter()
 {
 	//Unload plugin
 	try {
-		if (cm != 0)
+		if (m_Icn_comp != 0)
 		{
-			if (cnt != 0)
+			if (m_Icn_contr != 0)
 			{
-				cm->disconnect(cnt);
-				cnt->disconnect(cm);
+				m_Icn_comp->disconnect(m_Icn_contr);
+				m_Icn_contr->disconnect(m_Icn_comp);
 			}
 		}
 
-		if (processor != 0)
-			processor->setProcessing(false);
+		if (m_IAudprocessor != 0)
+			m_IAudprocessor->setProcessing(false);
 
-		if (component != 0)
+		if (m_IComponent != 0)
 		{
-			component->setActive(false);
+			m_IComponent->setActive(false);
 
-			if (controller != 0)
-				controller->terminate();
+			if (m_IEcontroller != 0)
+				m_IEcontroller->terminate();
 
-			component->terminate();
+			m_IComponent->terminate();
 		}
 
-		auto _ExitDll = func(ExitDll, Plugindll, "ExitDll");
+		auto _ExitDll = func(ExitDll, m_Plugindll, "ExitDll");
 		if (_ExitDll) {
 			_ExitDll();
 		}
-		FreeLibrary(Plugindll);
+		FreeLibrary(m_Plugindll);
 	}
 	catch (...) {}
 }

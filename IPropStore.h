@@ -53,12 +53,12 @@ public:
 	HRESULT DeserializePropVarinat(int type, void* src, size_t cb, PROPVARIANT* dest);
 private:
 
-	long ref = 1;
-	HKEY reg = 0;
+	long m_Ref = 1;
+	HKEY m_Reg = 0;
 	//HKEY regProp;
-	REGSAM _dwAcc;
+	REGSAM m_dwAcc;
 	//wchar_t dev[520];
-	std::wstring _guid;
-	CRITICAL_SECTION cr;
+	std::wstring m_guid;
+	CRITICAL_SECTION m_cr;
 };
 #endif

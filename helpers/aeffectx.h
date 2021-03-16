@@ -296,6 +296,7 @@ public:
    int32_t version;
    // processReplacing 50-53
    void (* processReplacing)( AEffect * , float * * , float * * , int );
+   void (* processDoubleReplacing)( AEffect * , double * * , double * * , int );
 
 } ;
 

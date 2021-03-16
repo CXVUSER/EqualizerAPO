@@ -501,20 +501,20 @@ ULONG EqualizerAPO::NonDelegatingRelease()
 	return refCount;
 }
 
-//IShellPropSheetext class
-//for chaining UI APO libraries see (APOFilter.h)
 IFACEMETHODIMP EqualizerAPO::AddPages(
 	__in LPFNADDPROPSHEETPAGE pfnAddPage,
 	__in LPARAM lParam)
 	//lParam *AudioFXExtensionParams structure
 {
-	IShellPropSheetExt* ish = 0;
 	HANDLE hFile = 0;
 	HRESULT hr = S_OK;
 	bool lock = false;
 	std::wstring cpath = L"";
 
-	if (pfnAddPage == 0 || lParam == 0)
+	if (pfnAddPage == 0)
+		return E_INVALIDARG;
+
+	if (lParam == 0)
 		return E_INVALIDARG;
 
 	cpath = RegistryHelper::readValue(APP_REGPATH, L"ConfigPath");
@@ -577,38 +577,47 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 
 			if (key == L"Device") {
 				AudioFXExtensionParams* fx = (AudioFXExtensionParams*)lParam;
-				if (fx->pwstrEndpointID || value.size() > 0) {
-					lock = (value.find(fx->pwstrEndpointID[17]) != std::wstring::npos ? false : true);
-				}
+				if (fx->pwstrEndpointID)
+					if (value.size() > 0)
+						lock = (value.find(fx->pwstrEndpointID[17]) != std::wstring::npos ? false : true);
 			}
 
-			if ((lock == false) & key == L"APO")
+			if (lock == false)
 			{
-				vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
-				for (unsigned i = 0; i + 1 < parts.size(); i += 2)
+				if (key == L"APO")
 				{
-					wstring key = parts[i];
-					wstring value = parts[i + 1];
-
-					if (key == L"UI")
+					vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
+					for (unsigned i = 0; i + 1 < parts.size(); i += 2)
 					{
-						try
+						wstring key = parts[i];
+						wstring value = parts[i + 1];
+
+						if (key == L"UI")
 						{
-							GUID g;
-							hr = CLSIDFromString(value.c_str(), &g);
-							if ((SUCCEEDED(hr)) & g != GUID_NULL)
+							try
 							{
-								hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, (void**) &ish);
-								if ((SUCCEEDED(hr)) & ish != 0)
+								GUID g;
+								hr = CLSIDFromString(value.c_str(), &g);
+								if (SUCCEEDED(hr))
 								{
-									hr = ish->AddPages(pfnAddPage, lParam);
-									ish->Release();
+									if (g != GUID_NULL) {
+										IShellPropSheetExt* ish = 0;
+										hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, (void**)&ish);
+										if (SUCCEEDED(hr))
+										{
+											if (ish != 0)
+											{
+												hr = ish->AddPages(pfnAddPage, lParam);
+												ish->Release();
+											}
+										}
+									}
 								}
 							}
-						}
-						catch (...)
-						{
-							TraceF(L"APOUI: UI library crashed name: %s", value.c_str());
+							catch (...)
+							{
+								TraceF(L"APOUI: UI library crashed name: %s", value.c_str());
+							}
 						}
 					}
 				}

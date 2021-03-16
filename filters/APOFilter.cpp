@@ -28,22 +28,22 @@ const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 
 APOFilter::APOFilter(GUID efguid, FilterEngine * e)
-	:_effectguid(efguid), _eapo(e) {}
+	:m_Eguid(efguid), m_Eapo(e) {}
 
 std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
-	channelCount = channelNames.size();
+	m_ch_cnt = channelNames.size();
 	HRESULT hr = 0;
 	EDataFlow devicetype = eRender;
 	WAVEFORMATEX* sf;
 
-	if (channelCount == 0) {
+	if (m_ch_cnt == 0) {
 		goto LEAVE_;
 	}
-	if (_effectguid == GUID_NULL) {
+	if (m_Eguid == GUID_NULL) {
 		goto LEAVE_;
 	}
-	if (_eapo->getDeviceGuid() == L"") {
+	if (m_Eapo->getDeviceGuid() == L"") {
 		TraceF(L"APO: Device guid not specified");
 		goto LEAVE_;
 	}
@@ -53,27 +53,27 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	//(sampleRate * 0x51eb851f) >> 0x24 >> 1;
 	//(sampleRate * 0x51eb851f) >> 0x24 >> 0x1f;
 
-	size_t buffersize = ((frameCount * channelCount) * sizeof(float)) * 2;
+	size_t buffersize = ((frameCount * m_ch_cnt) * sizeof(float)) * 2;
 	
-	bufferinput = (float*) MemoryHelper::alloc(buffersize);
-	memset(bufferinput, 0, buffersize);
+	m_bIn = (float*) MemoryHelper::alloc(buffersize);
+	m_bOut = (float*)((char*)m_bIn + (buffersize / 2));
 
-	bufferoutput = (float*) ((char*)bufferinput + (buffersize / 2));
+	memset(m_bIn, 0, buffersize);
 	
 	if ((SUCCEEDED(CoCreateInstance
 	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		reinterpret_cast<void**>(&pEnumerator)
-	))) || 0 == pEnumerator)
+		reinterpret_cast<void**>(&m_pEnumerator)
+	))) || 0 == m_pEnumerator)
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
 		std::wstring fulldevice = L"{0.0.0.00000000}.";
 
-		fulldevice += _eapo->getDeviceGuid();
+		fulldevice += m_Eapo->getDeviceGuid();
 
-		if (SUCCEEDED(pEnumerator->GetDevice(fulldevice.c_str(), &imd)))
+		if (SUCCEEDED(m_pEnumerator->GetDevice(fulldevice.c_str(), &imd)))
 		{
 			imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**> (&ime));
 			ime->GetDataFlow(&devicetype);
@@ -81,13 +81,13 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 			imd->Release();
 		}
 
-		if ((SUCCEEDED(pEnumerator->EnumAudioEndpoints(devicetype, DEVICE_STATE_ACTIVE, &pCollection))) || 0 == pCollection)
+		if ((SUCCEEDED(m_pEnumerator->EnumAudioEndpoints(devicetype, DEVICE_STATE_ACTIVE, &m_pCollection))) || 0 == m_pCollection)
 		{
-			if (SUCCEEDED(pEnumerator->GetDefaultAudioEndpoint(devicetype, eMultimedia, &pEndpoint)))
+			if (SUCCEEDED(m_pEnumerator->GetDefaultAudioEndpoint(devicetype, eMultimedia, &m_pEndpoint)))
 			{
-				if (SUCCEEDED(pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&iAudClient))))
+				if (SUCCEEDED(m_pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&m_iAudClient))))
 				{
-					hr = iAudClient->GetMixFormat(&sf);
+					hr = m_iAudClient->GetMixFormat(&sf);
 				}
 			}
 		}	
@@ -96,26 +96,26 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 	//Initialize
 	try
 	{
-		if (SUCCEEDED(CoCreateInstance(_effectguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&APO))))
+		if (SUCCEEDED(CoCreateInstance(m_Eguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&m_IAudObj))))
 		{
-			if (SUCCEEDED(APO->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&APORT))))
+			if (SUCCEEDED(m_IAudObj->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&m_IAudRT))))
 			{
-				if (SUCCEEDED(APO->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&APOCfg))))
+				if (SUCCEEDED(m_IAudObj->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&m_IAudConf))))
 				{
-					memset(&initstruct, 0, sizeof(APOInitSystemEffects2));
+					memset(&m_initstruct, 0, sizeof(APOInitSystemEffects2));
 
-					if ((SUCCEEDED(pEndpoint->OpenPropertyStore(STGM_READ, &pProps))))
+					if ((SUCCEEDED(m_pEndpoint->OpenPropertyStore(STGM_READ, &m_pProps))))
 					{
 						try
 						{
 							void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
 							if (hlp != 0) {
-								fxprop = new(hlp) IPropertyStoreFX(_eapo->getDeviceGuid(), KEY_READ);
-								if (true == fxprop->TryOpenPropertyStoreRegKey())
+								m_IFXProp = new(hlp) IPropertyStoreFX(m_Eapo->getDeviceGuid(), KEY_READ);
+								if (true == m_IFXProp->TryOpenPropertyStoreRegKey())
 								{
 									TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
-										_eapo->getDeviceGuid().data(),
-										_eapo->getDeviceName().data());
+										m_Eapo->getDeviceGuid().data(),
+										m_Eapo->getDeviceName().data());
 								}
 							}
 						}
@@ -124,15 +124,15 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 							goto LEAVE_;
 						}
 
-						initstruct.APOInit.cbSize = sizeof(APOInitSystemEffects);
-						initstruct.APOInit.clsid = _effectguid;
+						m_initstruct.APOInit.cbSize = sizeof(APOInitSystemEffects);
+						m_initstruct.APOInit.clsid = m_Eguid;
 
 						//IPropertyStore
-						initstruct.pAPOEndpointProperties = pProps;
-						initstruct.pAPOSystemEffectsProperties = reinterpret_cast<IPropertyStore*>(fxprop);
+						m_initstruct.pAPOEndpointProperties = m_pProps;
+						m_initstruct.pAPOSystemEffectsProperties = reinterpret_cast<IPropertyStore*>(m_IFXProp);
 
 						//IMMDeviceCollection
-						initstruct.pDeviceCollection = pCollection;
+						m_initstruct.pDeviceCollection = m_pCollection;
 
 						/* only for APOInitSystemEffects2 structure
 						initstruct.nSoftwareIoDeviceInCollection = 0;
@@ -142,19 +142,19 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 						*/
 					}
 
-					if (SUCCEEDED(APO->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&initstruct))))
+					if (SUCCEEDED(m_IAudObj->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&m_initstruct))))
 					{
-						if (SUCCEEDED(APO->GetRegistrationProperties(&APOInfo)))
+						if (SUCCEEDED(m_IAudObj->GetRegistrationProperties(&m_aProp)))
 						{
 							TraceF(L"APO: Successfully initialized Name: %s "
 								"Copyright: %s Max Input cconnections %d "
 								" Max Output connections %d "
 								" APO interfaces count %d ",
-								APOInfo->szFriendlyName,
-								APOInfo->szCopyrightInfo,
-								APOInfo->u32MaxInputConnections,
-								APOInfo->u32MaxOutputConnections,
-								APOInfo->u32NumAPOInterfaces);
+								m_aProp->szFriendlyName,
+								m_aProp->szCopyrightInfo,
+								m_aProp->u32MaxInputConnections,
+								m_aProp->u32MaxOutputConnections,
+								m_aProp->u32NumAPOInterfaces);
 						}
 					}
 				}
@@ -165,10 +165,10 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 		goto LEAVE_;
 	}
 
-	if (APOCfg)
+	if (m_IAudConf)
 	{
 		WAVEFORMATEX w = { 0 };
-		w.nChannels = (WORD) channelCount;
+		w.nChannels = (WORD) m_ch_cnt;
 		w.nSamplesPerSec = (DWORD) sampleRate;
 
 		w.wFormatTag = (w.wBitsPerSample = sf ? sf->wBitsPerSample : 32) < 32 ?
@@ -177,35 +177,35 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 		w.nAvgBytesPerSec = w.nSamplesPerSec * (w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8);
 
-		if ((SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &iAudType))) || 0 == iAudType)
+		if ((SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &m_iAudType))) || 0 == m_iAudType)
 		{
 			//setting buffer
-			pIn_.u32BufferFlags = BUFFER_VALID;
-			pIn_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
-			pIn_.pBuffer = (UINT_PTR) bufferinput;
+			m_cp_in.u32BufferFlags = BUFFER_VALID;
+			m_cp_in.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
+			m_cp_in.pBuffer = (UINT_PTR) m_bIn;
 
-			pOut_.u32BufferFlags = BUFFER_INVALID;
-			pOut_.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
-			pOut_.pBuffer = (UINT_PTR) bufferoutput;
+			m_cp_out.u32BufferFlags = BUFFER_INVALID;
+			m_cp_out.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
+			m_cp_out.pBuffer = (UINT_PTR) m_bOut;
 
 			//Configure input buffer
-			coDeskIn_.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
-			coDeskIn_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-			coDeskIn_.u32MaxFrameCount = frameCount;
-			coDeskIn_.pFormat = iAudType;
-			coDeskIn_.pBuffer = (UINT_PTR) bufferinput;
+			m_cd_in.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
+			m_cd_in.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+			m_cd_in.u32MaxFrameCount = frameCount;
+			m_cd_in.pFormat = m_iAudType;
+			m_cd_in.pBuffer = (UINT_PTR) m_bIn;
 
 			//Configure Out buffer
-			coDeskOut_.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
-			coDeskOut_.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-			coDeskOut_.u32MaxFrameCount = frameCount;
-			coDeskOut_.pFormat = iAudType;
-			coDeskOut_.pBuffer = (UINT_PTR) bufferoutput;
+			m_cd_out.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
+			m_cd_out.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
+			m_cd_out.u32MaxFrameCount = frameCount;
+			m_cd_out.pFormat = m_iAudType;
+			m_cd_out.pBuffer = (UINT_PTR) m_bOut;
 
 			try
 			{
 				//put settings to apo
-				APOCfg->LockForProcess(1, &coDeskIn, 1, &coDeskOut);
+				m_IAudConf->LockForProcess(1, &m_cd_in_p, 1, &m_cd_out_p);
 				CM_RELEASE(sf)
 					bypass = false;
 					goto LEAVE_;
@@ -225,7 +225,7 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 {
 	if (bypass)
 	{
-		for (unsigned i = 0; i < channelCount; i++)
+		for (unsigned i = 0; i < m_ch_cnt; i++)
 			memcpy(output[i], input[i], frameCount * sizeof(float));
 		return;
 	}
@@ -233,30 +233,30 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 	__try
 	{
 		//write
-		for (size_t c = 0; c < channelCount; c++)
+		for (size_t c = 0; c < m_ch_cnt; c++)
 		{
 			for (unsigned fc = 0; fc < frameCount; fc++)
 			{
-				((float*)(bufferinput+c))[fc * channelCount] = input[c][fc];
+				((float*)(m_bIn+c))[fc * m_ch_cnt] = input[c][fc];
 			}
 		}
-
+		
 		//pInput
-		pIn_.u32ValidFrameCount = frameCount;
+		m_cp_in.u32ValidFrameCount = frameCount;
 
 		//pOutput
-		pOut_.u32BufferFlags = BUFFER_INVALID;
-		pOut_.u32ValidFrameCount = frameCount;
+		m_cp_out.u32BufferFlags = BUFFER_INVALID;
+		m_cp_out.u32ValidFrameCount = frameCount;
 
 		//chilling buffer
-		APORT->APOProcess(1, &pIn, 1, &pOut); //Process
+		m_IAudRT->APOProcess(1, &m_cp_in_p, 1, &m_cp_out_p); //Process
 
 		//Read
-		for (size_t c = 0; c < channelCount; c++)
+		for (size_t c = 0; c < m_ch_cnt; c++)
 		{
 			for (size_t fc = 0; fc < frameCount; fc++)
 			{
-				output[c][fc] = ((float*)(bufferoutput+c))[fc * channelCount];
+				output[c][fc] = ((float*)(m_bOut+c))[fc * m_ch_cnt];
 			}
 		}
 	}
@@ -268,7 +268,7 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 			reportCrash = false;
 		}
 
-		for (unsigned i = 0; i < channelCount; i++)
+		for (unsigned i = 0; i < m_ch_cnt; i++)
 			memcpy(output[i], input[i], frameCount * sizeof(float));
 		bypass = true;
 	}
@@ -278,34 +278,34 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 APOFilter::~APOFilter()
 {
 	try {
-		MH_RELEASE(bufferinput)
+		MH_RELEASE(m_bIn)
 
-			SAFE_RELEASE(iAudType)
-			SAFE_RELEASE(iAudClient)
+			SAFE_RELEASE(m_iAudType)
+			SAFE_RELEASE(m_iAudClient)
 
-			CM_RELEASE(APOInfo)
+			CM_RELEASE(m_aProp)
 			
-			SAFE_RELEASE(pEnumerator)
-			SAFE_RELEASE(pCollection)
-			SAFE_RELEASE(pEndpoint)
-			SAFE_RELEASE(pProps)
+			SAFE_RELEASE(m_pEnumerator)
+			SAFE_RELEASE(m_pCollection)
+			SAFE_RELEASE(m_pEndpoint)
+			SAFE_RELEASE(m_pProps)
 
-			SAFE_RELEASE(fxprop)
+			SAFE_RELEASE(m_IFXProp)
 
 			if (bypass == false)
 			{
-				if (APOCfg != 0) {
-					APOCfg->UnlockForProcess();
+				if (m_IAudConf != 0) {
+					m_IAudConf->UnlockForProcess();
 				}
 
-				if (APO != 0) {
-					APO->Reset();
+				if (m_IAudObj != 0) {
+					m_IAudObj->Reset();
 				}
 			}
 
-		SAFE_RELEASE(APOCfg)
-			SAFE_RELEASE(APORT)
-			SAFE_RELEASE(APO)
+		SAFE_RELEASE(m_IAudConf)
+			SAFE_RELEASE(m_IAudRT)
+			SAFE_RELEASE(m_IAudObj)
 
 	}
 	catch (...) {
