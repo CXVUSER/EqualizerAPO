@@ -48,6 +48,7 @@ static const wchar_t* formatValueName = L"{f19f064d-082c-4e27-bc73-6882a1bb8e4c}
 static const wchar_t* channelMaskValueName = L"{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},3";
 static const wchar_t* lfxGuidValueName = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},1";
 static const wchar_t* gfxGuidValueName = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},2";
+static const wchar_t* uiGuidValueName = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},3";
 static const wchar_t* sfxGuidValueName = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},5";
 static const wchar_t* mfxGuidValueName = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},6";
 static const wchar_t* efxGuidValueName = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},7";
@@ -150,7 +151,8 @@ bool DeviceAPOInfo::checkAPORegistration(bool fix)
 	if (!RegistryHelper::keyExists(apoRegistrationKeyPath L"\\" + RegistryHelper::getGuidString(EQUALIZERAPO_PRE_MIX_GUID))
 		|| !RegistryHelper::keyExists(apoRegistrationKeyPath L"\\" + RegistryHelper::getGuidString(EQUALIZERAPO_POST_MIX_GUID))
 		|| !RegistryHelper::keyExists(clsidKeyPath L"\\" + RegistryHelper::getGuidString(EQUALIZERAPO_PRE_MIX_GUID))
-		|| !RegistryHelper::keyExists(clsidKeyPath L"\\" + RegistryHelper::getGuidString(EQUALIZERAPO_POST_MIX_GUID)))
+		|| !RegistryHelper::keyExists(clsidKeyPath L"\\" + RegistryHelper::getGuidString(EQUALIZERAPO_POST_MIX_GUID))
+		|| !RegistryHelper::keyExists(clsidKeyPath L"\\" + RegistryHelper::getGuidString(EQUALIZERAPO_UI_CPL_GUID)))
 	{
 		result = false;
 
@@ -509,6 +511,8 @@ void DeviceAPOInfo::install()
 			RegistryHelper::writeValue(keyPath + L"\\FxProperties", lfxGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_PRE_MIX_GUID));
 		if (selectedInstallState.installPostMix && !input)
 			RegistryHelper::writeValue(keyPath + L"\\FxProperties", gfxGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_POST_MIX_GUID));
+
+		RegistryHelper::writeValue(keyPath + L"\\FxProperties", uiGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_UI_CPL_GUID));
 		if (RegistryHelper::valueExists(keyPath + L"\\FxProperties", sfxGuidValueName))
 			RegistryHelper::deleteValue(keyPath + L"\\FxProperties", sfxGuidValueName);
 		if (RegistryHelper::valueExists(keyPath + L"\\FxProperties", mfxGuidValueName))
@@ -522,6 +526,8 @@ void DeviceAPOInfo::install()
 			RegistryHelper::deleteValue(keyPath + L"\\FxProperties", lfxGuidValueName);
 		if (RegistryHelper::valueExists(keyPath + L"\\FxProperties", gfxGuidValueName))
 			RegistryHelper::deleteValue(keyPath + L"\\FxProperties", gfxGuidValueName);
+
+		RegistryHelper::writeValue(keyPath + L"\\FxProperties", uiGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_UI_CPL_GUID));
 		if (selectedInstallState.installPreMix)
 		{
 			RegistryHelper::writeValue(keyPath + L"\\FxProperties", sfxGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_PRE_MIX_GUID));
@@ -542,6 +548,8 @@ void DeviceAPOInfo::install()
 			RegistryHelper::deleteValue(keyPath + L"\\FxProperties", lfxGuidValueName);
 		if (RegistryHelper::valueExists(keyPath + L"\\FxProperties", gfxGuidValueName))
 			RegistryHelper::deleteValue(keyPath + L"\\FxProperties", gfxGuidValueName);
+
+		RegistryHelper::writeValue(keyPath + L"\\FxProperties", uiGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_UI_CPL_GUID));
 		if (selectedInstallState.installPreMix)
 		{
 			RegistryHelper::writeValue(keyPath + L"\\FxProperties", sfxGuidValueName, RegistryHelper::getGuidString(EQUALIZERAPO_PRE_MIX_GUID));
