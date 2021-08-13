@@ -68,11 +68,11 @@
 		reinterpret_cast<T>(GetProcAddress(h, str))
 
 #pragma AVRT_VTABLES_BEGIN
-class APOFilter : public IFilter
+class APOProxyFilter : public IFilter
 {
 public:
-	APOFilter(GUID efguid,FilterEngine* e);
-	~APOFilter();
+	APOProxyFilter(GUID efguid,FilterEngine* e);
+	~APOProxyFilter();
 
 	bool getInPlace() override { return false; }
 	std::vector<std::wstring> initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames) override;

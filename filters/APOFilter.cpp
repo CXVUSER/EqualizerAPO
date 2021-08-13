@@ -20,17 +20,16 @@
 #include "helpers/StringHelper.h"
 #include "helpers/LogHelper.h"
 #include "APOFilter.h"
-//#include <math.h>
 
 using namespace std;
 
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 
-APOFilter::APOFilter(GUID efguid, FilterEngine * e)
+APOProxyFilter::APOProxyFilter(GUID efguid, FilterEngine * e)
 	:m_Eguid(efguid), m_Eapo(e) {}
 
-std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
+std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames)
 {
 	m_ch_cnt = channelNames.size();
 	HRESULT hr = 0;
@@ -50,22 +49,20 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 	//calc buffer size
 	int frameCount = sampleRate / 100;
-	//(sampleRate * 0x51eb851f) >> 0x24 >> 1;
-	//(sampleRate * 0x51eb851f) >> 0x24 >> 0x1f;
 
-	size_t buffersize = ((frameCount * m_ch_cnt) * sizeof(float)) * 2;
+	size_t buffersize = ((frameCount * m_ch_cnt) * sizeof(float)) << 1;
 	
 	m_bIn = (float*) MemoryHelper::alloc(buffersize);
-	m_bOut = (float*)((char*)m_bIn + (buffersize / 2));
+	m_bOut = (float*) ((char*)m_bIn + (buffersize >> 1));
 
 	memset(m_bIn, 0, buffersize);
 	
-	if ((SUCCEEDED(CoCreateInstance
+	if (SUCCEEDED(CoCreateInstance
 	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
 		reinterpret_cast<void**>(&m_pEnumerator)
-	))) || 0 == m_pEnumerator)
+	)))
 	{
 		IMMDevice* imd = 0;
 		IMMEndpoint* ime = 0;
@@ -81,13 +78,15 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 			imd->Release();
 		}
 
-		if ((SUCCEEDED(m_pEnumerator->EnumAudioEndpoints(devicetype, DEVICE_STATE_ACTIVE, &m_pCollection))) || 0 == m_pCollection)
+		if (SUCCEEDED(m_pEnumerator->EnumAudioEndpoints(devicetype, DEVICE_STATE_ACTIVE, &m_pCollection)))
 		{
-			if (SUCCEEDED(m_pEnumerator->GetDefaultAudioEndpoint(devicetype, eMultimedia, &m_pEndpoint)))
-			{
-				if (SUCCEEDED(m_pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&m_iAudClient))))
+			if (0 != m_pCollection) {
+				if (SUCCEEDED(m_pEnumerator->GetDefaultAudioEndpoint(devicetype, eMultimedia, &m_pEndpoint)))
 				{
-					hr = m_iAudClient->GetMixFormat(&sf);
+					if (SUCCEEDED(m_pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&m_iAudClient))))
+					{
+						hr = m_iAudClient->GetMixFormat(&sf);
+					}
 				}
 			}
 		}	
@@ -111,7 +110,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 							void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
 							if (hlp != 0) {
 								m_IFXProp = new(hlp) IPropertyStoreFX(m_Eapo->getDeviceGuid(), KEY_READ);
-								if (true == m_IFXProp->TryOpenPropertyStoreRegKey())
+								if (false == m_IFXProp->TryOpenPropertyStoreRegKey())
 								{
 									TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
 										m_Eapo->getDeviceGuid().data(),
@@ -177,8 +176,11 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 
 		w.nAvgBytesPerSec = w.nSamplesPerSec * (w.nBlockAlign = (w.wBitsPerSample * w.nChannels) / 8);
 
-		if ((SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &m_iAudType))) || 0 == m_iAudType)
+		if (SUCCEEDED(CreateAudioMediaType(&w, sizeof(WAVEFORMATEX), &m_iAudType)))
 		{
+			if (0 == m_iAudType)
+				goto LEAVE_;
+
 			//setting buffer
 			m_cp_in.u32BufferFlags = BUFFER_VALID;
 			m_cp_in.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
@@ -221,7 +223,7 @@ std::vector<std::wstring> APOFilter::initialize(float sampleRate, unsigned maxFr
 }
 
 #pragma AVRT_CODE_BEGIN
-void APOFilter::process(float** output, float** input, unsigned frameCount)
+void APOProxyFilter::process(float** output, float** input, unsigned frameCount)
 {
 	if (bypass)
 	{
@@ -275,7 +277,7 @@ void APOFilter::process(float** output, float** input, unsigned frameCount)
 }
 #pragma AVRT_CODE_END
 
-APOFilter::~APOFilter()
+APOProxyFilter::~APOProxyFilter()
 {
 	try {
 		MH_RELEASE(m_bIn)
@@ -294,13 +296,11 @@ APOFilter::~APOFilter()
 
 			if (bypass == false)
 			{
-				if (m_IAudConf != 0) {
+				if (m_IAudConf != 0)
 					m_IAudConf->UnlockForProcess();
-				}
 
-				if (m_IAudObj != 0) {
+				if (m_IAudObj != 0)
 					m_IAudObj->Reset();
-				}
 			}
 
 		SAFE_RELEASE(m_IAudConf)

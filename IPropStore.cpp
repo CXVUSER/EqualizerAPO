@@ -150,10 +150,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_SZ)
 	{
-		auto sdata = size;
-
 		auto x = (wchar_t*) CoTaskMemAlloc(size);
-		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &sdata);
+		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &size);
 
 		if (!status) {
 			pv->vt = VT_LPWSTR;
@@ -165,11 +163,9 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_DWORD)
 	{
-		auto sdata = size;
-
 		if (size == 4)
 		{
-			auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &sdata);
+			auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &size);
 
 			if (!status) {
 				pv->vt = VT_UI4;
@@ -181,21 +177,22 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_BINARY)
 	{
-		auto sdata = size;
-		PROPVARIANT pvdata = { 0 };
+		auto pvdata = (LPVOID) CoTaskMemAlloc(size);
 
-		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_BINARY, 0, &pvdata, &sdata);
+		if (pvdata) {
+			auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_BINARY, 0, pvdata, &size);
 
-		if (!status)
-			hr = DeserializePropVarinat(type, &pvdata, size, pv);
+			if (!status)
+				hr = DeserializePropVarinat(type, pvdata, size, pv);
+			CoTaskMemFree(pvdata);
+		}
 		goto LEAVE_;
 	}
 
 	if (type == REG_MULTI_SZ)
 	{
-		auto sdata = size;
 		LPVOID str = CoTaskMemAlloc(size);
-		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &sdata);
+		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &size);
 
 		if (!status) {
 			hr = InitPropVariantFromStringAsVector((PCWSTR) str, pv);
@@ -211,7 +208,6 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 	if (type == REG_EXPAND_SZ) {
 		size_t s = size + 2;
-		DWORD sdata;
 
 		auto vm = CoTaskMemAlloc(s);
 
@@ -232,7 +228,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 
 			memset(vm, 0, s2);
 
-			auto status = RegGetValueW(m_Reg, 0, keystr, 0x6, 0, vm, &sdata);
+			auto status = RegGetValueW(m_Reg, 0, keystr, 0x6, 0, vm, &size);
 
 			if (status != ERROR_FILE_NOT_FOUND) {
 				if (status == ERROR_SUCCESS)
@@ -265,7 +261,7 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	}
 
 	LEAVE_:
-	LeaveCriticalSection(&this->m_cr);
+	LeaveCriticalSection(&m_cr);
 	return hr;
 };
 
@@ -292,8 +288,8 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 		if (enumemator != 0)
 		{
 			IMMDevice* imd = 0;
-				IMMEndpoint* ime = 0;
-				std::wstring fulldevice = L"{0.0.0.00000000}.";
+			IMMEndpoint* ime = 0;
+			std::wstring fulldevice = L"{0.0.0.00000000}.";
 			fulldevice += m_guid;
 
 			hr = enumemator->GetDevice(fulldevice.c_str(), &imd);
@@ -343,7 +339,7 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 
 	LeaveCriticalSection(&m_cr);
 	return result;
-}
+};
 
 HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb, PROPVARIANT* dest)
 {
@@ -402,7 +398,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		dest->blob.cbSize = cb;
 
 		memcpy(mem, &p->blob, s);
-		dest->vt = VT_EMPTY;
+		dest->vt = t;
 		return S_OK;
 	}
 	else if (t == VT_UI8 || t == VT_FILETIME) {
@@ -425,7 +421,8 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 	case VT_UI2:
 	case VT_I8:
 	{
-		memcpy(&dest->pbVal, &p->pbVal, cb - 8);
+		memcpy(&dest->pbVal, &p->pbVal, 16);
+		dest->vt = t;
 	}
 	break;
 	case VT_LPSTR:
@@ -438,7 +435,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 
 		memcpy(val, str, s);
 		dest->pszVal = val;
-		dest->vt = VT_EMPTY;
+		dest->vt = t;
 	}
 	break;
 	case VT_BSTR:
@@ -450,7 +447,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		memcpy(mem, &p->bstrVal, s * 2);
 
 		dest->pbstrVal = (BSTR*)mem;
-		dest->vt = VT_EMPTY;
+		dest->vt = t;
 	}
 	break;
 	case VT_CLSID:
@@ -460,9 +457,10 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 			return E_FAIL;
 		memcpy(g, &p->pbVal, sizeof(GUID));
 		dest->puuid = g;
-		dest->vt = VT_EMPTY;
+		dest->vt = t;
 	}
 	break;
 	};
+
 	return S_OK;
-}
+};

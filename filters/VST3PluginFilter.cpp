@@ -26,47 +26,46 @@ VST3PluginFilter::VST3PluginFilter(FilterEngine* e, std::wstring path, std::wstr
 	: m_Eapo(e), m_Path(path), m_Settings(settings) {
 }
 
-bool VST3PluginFilter::InitPlugin(PClassInfo cl) {
+bool VST3PluginFilter::AudioEffectClassInit(PClassInfo cl) {
 
 	__try {
-		if (m_Ifact->createInstance(cl.cid, FUnknown::iid, (void**)&m_IComponent) == kResultTrue)
-		{
-			if (m_IComponent != 0)
-			{
-				m_IComponent->initialize(0);
-
-				if (m_IComponent->queryInterface(IEditController::iid, (void**)&m_IEcontroller) != kResultTrue)
-				{
-					TUID controlID = { 0 };
-
-					if (m_IComponent->getControllerClassId(controlID) == kResultOk)
-						if (m_Ifact->createInstance(controlID, IEditController::iid, (void**)&m_IEcontroller) == kResultTrue)
-							if (m_IEcontroller != NULL) {
-								if (m_IComponent->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_comp) == kResultTrue) {
-									if (m_Icn_comp != NULL)
-										if (m_IEcontroller->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_contr) == kResultTrue)
-										{
-											if (m_Icn_contr != NULL)
-											{
-												m_Icn_comp->connect(m_Icn_contr);
-												m_Icn_contr->connect(m_Icn_comp);
-												m_IEcontroller->initialize(0);
-											}
-										}
-								}
-							}
-				}
-			}
-		}
-		else {
+		if (m_Ifact->createInstance(cl.cid, FUnknown::iid, (void**)&m_IComponent) == kResultFalse)
 			return false;
+		
+		if (m_IComponent != 0)
+			return false;
+		
+		m_IComponent->initialize(0);
+
+		if (m_IComponent->queryInterface(IEditController::iid, (void**)&m_IEcontroller) != kResultTrue)
+		{
+			TUID controlID = { 0 };
+
+			if (m_IComponent->getControllerClassId(controlID) == kResultOk)
+				if (m_Ifact->createInstance(controlID, IEditController::iid, (void**)&m_IEcontroller) == kResultTrue)
+					if (m_IEcontroller != NULL) {
+						if (m_IComponent->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_comp) == kResultTrue) {
+							if (m_Icn_comp != NULL)
+								if (m_IEcontroller->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_contr) == kResultTrue)
+								{
+									if (m_Icn_contr != NULL)
+									{
+										m_Icn_comp->connect(m_Icn_contr);
+										m_Icn_contr->connect(m_Icn_comp);
+										m_IEcontroller->initialize(0);
+									}
+								}
+						}
+					}
+			return true;
 		}
+		return true;
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
 		return false;
 	}
 
-	return true;
+	return false;
 }
 
 void VST3PluginFilter::resetPlugin()
@@ -165,15 +164,17 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 		if (strcmp(cl.category, kVstAudioEffectClass) == 0)
 		{
-			if (!InitPlugin(cl))
+			if (!AudioEffectClassInit(cl))
 				goto LEAVE_;
 			break;
 		}
 	}
 
-	if (m_IComponent->queryInterface(IAudioProcessor::iid, (void**) &m_IAudprocessor) == kResultFalse)
-		if (m_IAudprocessor == 0)
-			goto LEAVE_;
+	if (m_IComponent->queryInterface(IAudioProcessor::iid, (void**)&m_IAudprocessor) != kResultTrue)
+		goto LEAVE_;
+
+	if (m_IAudprocessor == 0)
+		goto LEAVE_;
 
 	auto buscountinp = m_IComponent->getBusCount(kAudio, kInput);
 	auto buscountout = m_IComponent->getBusCount(kAudio, kOutput);
@@ -220,7 +221,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		m_Out.numChannels = m_ChannelCount;
 	}
 
-	setup.maxSamplesPerBlock = (m_In.numChannels != m_ChannelCount) ? (frameCount * 2) :
+	setup.maxSamplesPerBlock = (m_In.numChannels != m_ChannelCount) ? (frameCount << 1) :
 		(frameCount * m_ChannelCount);
 
 	if (m_IAudprocessor->setupProcessing(setup) == kResultFalse)

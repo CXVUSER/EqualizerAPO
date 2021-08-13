@@ -269,7 +269,7 @@ void VSTPluginInstance::writeToEffect(const std::wstring& chunkData, const std::
 			CryptStringToBinaryW(chunkData.c_str(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
 			BYTE* buf = new BYTE[bufSize];
 			if (CryptStringToBinaryW(chunkData.c_str(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
-				effect->dispatcher(effect, effSetChunk, 1, bufSize, buf, 0.0f);
+				effect->dispatcher(effect, effSetChunk, 0, bufSize, buf, 0.0f);
 			delete[] buf;
 		}
 	}
@@ -298,7 +298,7 @@ void VSTPluginInstance::readFromEffect(std::wstring& chunkData, std::unordered_m
 	if (effect->flags & effFlagsProgramChunks)
 	{
 		BYTE* chunk = NULL;
-		int size = (int)effect->dispatcher(effect, effGetChunk, 1, 0, &chunk, 0.0f);
+		int size = (int)effect->dispatcher(effect, effGetChunk, 0, 0, &chunk, 0.0f);
 		DWORD stringLength;
 		CryptBinaryToStringW(chunk, size, CRYPT_STRING_BASE64, NULL, &stringLength);
 		wchar_t* string = new wchar_t[stringLength];

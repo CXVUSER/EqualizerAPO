@@ -29,7 +29,7 @@ vector<IFilter*> APOFilterFactory::createFilter(const wstring& configPath, wstri
 {
 	(const wstring&)(configPath);
 
-	APOFilter* filter = NULL;
+	APOProxyFilter* filter = NULL;
 	GUID FX = GUID_NULL;
 
 	if (command == L"APO")
@@ -45,8 +45,8 @@ vector<IFilter*> APOFilterFactory::createFilter(const wstring& configPath, wstri
 				CLSIDFromString(value.c_str(), &FX);
 			}
 		}
-			void* mem = MemoryHelper::alloc(sizeof(APOFilter));
-			filter = new(mem) APOFilter(FX,en);
+			void* mem = MemoryHelper::alloc(sizeof(APOProxyFilter));
+			filter = new(mem) APOProxyFilter(FX,en);
 	}
 
 	if (filter == NULL)
