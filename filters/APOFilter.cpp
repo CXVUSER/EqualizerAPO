@@ -305,7 +305,7 @@ APOProxyFilter::~APOProxyFilter()
 
 		SAFE_RELEASE(m_IAudConf)
 			SAFE_RELEASE(m_IAudRT)
-			SAFE_RELEASE(m_IAudObj)
+			SAFE_RELEASE(m_IAudObj) 
 
 	}
 	catch (...) {

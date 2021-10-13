@@ -32,7 +32,7 @@ bool VST3PluginFilter::AudioEffectClassInit(PClassInfo cl) {
 		if (m_Ifact->createInstance(cl.cid, FUnknown::iid, (void**)&m_IComponent) == kResultFalse)
 			return false;
 		
-		if (m_IComponent != 0)
+		if (m_IComponent == nullptr)
 			return false;
 		
 		m_IComponent->initialize(0);
