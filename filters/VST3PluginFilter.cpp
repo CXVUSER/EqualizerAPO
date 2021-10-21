@@ -35,7 +35,8 @@ bool VST3PluginFilter::AudioEffectClassInit(PClassInfo cl) {
 		if (m_IComponent == nullptr)
 			return false;
 		
-		m_IComponent->initialize(0);
+		if (m_IComponent->initialize(0) == kResultFalse)
+			return false;
 
 		if (m_IComponent->queryInterface(IEditController::iid, (void**)&m_IEcontroller) != kResultTrue)
 		{
