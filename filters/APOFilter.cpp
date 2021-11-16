@@ -61,7 +61,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 	(
 		CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		reinterpret_cast<void**>(&m_pEnumerator)
+		(void**) & m_pEnumerator
 	)))
 	{
 		IMMDevice* imd = 0;
@@ -72,7 +72,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 
 		if (SUCCEEDED(m_pEnumerator->GetDevice(fulldevice.c_str(), &imd)))
 		{
-			imd->QueryInterface(__uuidof(IMMEndpoint), reinterpret_cast<void**> (&ime));
+			imd->QueryInterface(__uuidof(IMMEndpoint), (void**) &ime);
 			ime->GetDataFlow(&devicetype);
 			ime->Release();
 			imd->Release();
@@ -83,7 +83,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 			if (0 != m_pCollection) {
 				if (SUCCEEDED(m_pEnumerator->GetDefaultAudioEndpoint(devicetype, eMultimedia, &m_pEndpoint)))
 				{
-					if (SUCCEEDED(m_pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, reinterpret_cast<void**> (&m_iAudClient))))
+					if (SUCCEEDED(m_pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, (void**) &m_iAudClient)))
 					{
 						hr = m_iAudClient->GetMixFormat(&sf);
 					}
@@ -95,67 +95,67 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 	//Initialize
 	try
 	{
-		if (SUCCEEDED(CoCreateInstance(m_Eguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), reinterpret_cast<void**> (&m_IAudObj))))
+		if (FAILED(CoCreateInstance(m_Eguid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IAudioProcessingObject), (void**) &m_IAudObj)))
+			goto LEAVE_;
+
+		if (FAILED(m_IAudObj->QueryInterface(__uuidof(IAudioProcessingObjectRT), (void**) &m_IAudRT)))
+			goto LEAVE_;
+
+		if (FAILED(m_IAudObj->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), (void**) &m_IAudConf)))
+			goto LEAVE_;
+
+		memset(&m_initstruct, 0, sizeof(APOInitSystemEffects2));
+
+		if (SUCCEEDED(m_pEndpoint->OpenPropertyStore(STGM_READ, &m_pProps)))
 		{
-			if (SUCCEEDED(m_IAudObj->QueryInterface(__uuidof(IAudioProcessingObjectRT), reinterpret_cast<void**> (&m_IAudRT))))
+			try
 			{
-				if (SUCCEEDED(m_IAudObj->QueryInterface(__uuidof(IAudioProcessingObjectConfiguration), reinterpret_cast<void**> (&m_IAudConf))))
+				void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
+				if (hlp != 0) {
+					m_IFXProp = new(hlp) IPropertyStoreFX(m_Eapo->getDeviceGuid(), KEY_READ);
+					if (false == m_IFXProp->TryOpenPropertyStoreRegKey())
+					{
+						TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
+							m_Eapo->getDeviceGuid().data(),
+							m_Eapo->getDeviceName().data());
+					}
+				}
+			}
+			catch (...)
+			{
+				goto LEAVE_;
+			}
+
+			m_initstruct.APOInit.cbSize = sizeof(APOInitSystemEffects);
+			m_initstruct.APOInit.clsid = m_Eguid;
+
+			//IPropertyStore
+			m_initstruct.pAPOEndpointProperties = m_pProps;
+			m_initstruct.pAPOSystemEffectsProperties = (IPropertyStore*) m_IFXProp;
+
+			//IMMDeviceCollection
+			m_initstruct.pDeviceCollection = m_pCollection;
+
+			/* only for APOInitSystemEffects2 structure
+			initstruct.nSoftwareIoDeviceInCollection = 0;
+			initstruct.nSoftwareIoConnectorIndex = 0;
+			initstruct.AudioProcessingMode = AudioProcessingMode;
+			initstruct.InitializeForDiscoveryOnly = InitializeForDiscoveryOnly;
+			*/
+
+			if (SUCCEEDED(m_IAudObj->Initialize(sizeof(APOInitSystemEffects), (BYTE*) &m_initstruct)))
+			{
+				if (SUCCEEDED(m_IAudObj->GetRegistrationProperties(&m_aProp)))
 				{
-					memset(&m_initstruct, 0, sizeof(APOInitSystemEffects2));
-
-					if ((SUCCEEDED(m_pEndpoint->OpenPropertyStore(STGM_READ, &m_pProps))))
-					{
-						try
-						{
-							void* hlp = reinterpret_cast<IPropertyStoreFX*>(MemoryHelper::alloc(sizeof(IPropertyStoreFX)));
-							if (hlp != 0) {
-								m_IFXProp = new(hlp) IPropertyStoreFX(m_Eapo->getDeviceGuid(), KEY_READ);
-								if (false == m_IFXProp->TryOpenPropertyStoreRegKey())
-								{
-									TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
-										m_Eapo->getDeviceGuid().data(),
-										m_Eapo->getDeviceName().data());
-								}
-							}
-						}
-						catch (...)
-						{
-							goto LEAVE_;
-						}
-
-						m_initstruct.APOInit.cbSize = sizeof(APOInitSystemEffects);
-						m_initstruct.APOInit.clsid = m_Eguid;
-
-						//IPropertyStore
-						m_initstruct.pAPOEndpointProperties = m_pProps;
-						m_initstruct.pAPOSystemEffectsProperties = reinterpret_cast<IPropertyStore*>(m_IFXProp);
-
-						//IMMDeviceCollection
-						m_initstruct.pDeviceCollection = m_pCollection;
-
-						/* only for APOInitSystemEffects2 structure
-						initstruct.nSoftwareIoDeviceInCollection = 0;
-						initstruct.nSoftwareIoConnectorIndex = 0;
-						initstruct.AudioProcessingMode = AudioProcessingMode;
-						initstruct.InitializeForDiscoveryOnly = InitializeForDiscoveryOnly;
-						*/
-					}
-
-					if (SUCCEEDED(m_IAudObj->Initialize(sizeof(APOInitSystemEffects), reinterpret_cast<BYTE*> (&m_initstruct))))
-					{
-						if (SUCCEEDED(m_IAudObj->GetRegistrationProperties(&m_aProp)))
-						{
-							TraceF(L"APO: Successfully initialized Name: %s "
-								"Copyright: %s Max Input cconnections %d "
-								" Max Output connections %d "
-								" APO interfaces count %d ",
-								m_aProp->szFriendlyName,
-								m_aProp->szCopyrightInfo,
-								m_aProp->u32MaxInputConnections,
-								m_aProp->u32MaxOutputConnections,
-								m_aProp->u32NumAPOInterfaces);
-						}
-					}
+					TraceF(L"APO: Successfully initialized Name: %s "
+						"Copyright: %s Max Input cconnections %d "
+						" Max Output connections %d "
+						" APO interfaces count %d ",
+						m_aProp->szFriendlyName,
+						m_aProp->szCopyrightInfo,
+						m_aProp->u32MaxInputConnections,
+						m_aProp->u32MaxOutputConnections,
+						m_aProp->u32NumAPOInterfaces);
 				}
 			}
 		}
