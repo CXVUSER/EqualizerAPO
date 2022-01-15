@@ -114,11 +114,9 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 				if (hlp != 0) {
 					m_IFXProp = new(hlp) IPropertyStoreFX(m_Eapo->getDeviceGuid(), KEY_READ);
 					if (false == m_IFXProp->TryOpenPropertyStoreRegKey())
-					{
 						TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
 							m_Eapo->getDeviceGuid().data(),
 							m_Eapo->getDeviceName().data());
-					}
 				}
 			}
 			catch (...)
@@ -236,12 +234,8 @@ void APOProxyFilter::process(float** output, float** input, unsigned frameCount)
 	{
 		//write
 		for (size_t c = 0; c < m_ch_cnt; c++)
-		{
 			for (unsigned fc = 0; fc < frameCount; fc++)
-			{
 				((float*)(m_bIn+c))[fc * m_ch_cnt] = input[c][fc];
-			}
-		}
 		
 		//pInput
 		m_cp_in.u32ValidFrameCount = frameCount;
@@ -255,12 +249,8 @@ void APOProxyFilter::process(float** output, float** input, unsigned frameCount)
 
 		//Read
 		for (size_t c = 0; c < m_ch_cnt; c++)
-		{
 			for (size_t fc = 0; fc < frameCount; fc++)
-			{
 				output[c][fc] = ((float*)(m_bOut+c))[fc * m_ch_cnt];
-			}
-		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{

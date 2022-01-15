@@ -31,10 +31,10 @@ bool VST3PluginFilter::AudioEffectClassInit(PClassInfo cl) {
 	__try {
 		if (m_Ifact->createInstance(cl.cid, FUnknown::iid, (void**)&m_IComponent) == kResultFalse)
 			return false;
-		
+
 		if (m_IComponent == nullptr)
 			return false;
-		
+
 		if (m_IComponent->initialize(0) == kResultFalse)
 			return false;
 
@@ -42,23 +42,25 @@ bool VST3PluginFilter::AudioEffectClassInit(PClassInfo cl) {
 		{
 			TUID controlID = { 0 };
 
-			if (m_IComponent->getControllerClassId(controlID) == kResultOk)
-				if (m_Ifact->createInstance(controlID, IEditController::iid, (void**)&m_IEcontroller) == kResultTrue)
-					if (m_IEcontroller != NULL) {
-						if (m_IComponent->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_comp) == kResultTrue) {
-							if (m_Icn_comp != NULL)
-								if (m_IEcontroller->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_contr) == kResultTrue)
-								{
-									if (m_Icn_contr != NULL)
-									{
-										m_Icn_comp->connect(m_Icn_contr);
-										m_Icn_contr->connect(m_Icn_comp);
-										m_IEcontroller->initialize(0);
-									}
-								}
+			if (m_IComponent->getControllerClassId(controlID) != kResultTrue)
+				return false;
+
+			if (m_Ifact->createInstance(controlID, IEditController::iid, (void**)&m_IEcontroller) != kResultTrue)
+				return false;
+
+			if (m_IEcontroller == NULL)
+				return false;
+
+			if (m_IComponent->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_comp) == kResultTrue) {
+				if (m_Icn_comp != NULL)
+					if (m_IEcontroller->queryInterface(Vst::IConnectionPoint::iid, (void**)&m_Icn_contr) == kResultTrue)
+						if (m_Icn_contr != NULL)
+						{
+							m_Icn_comp->connect(m_Icn_contr);
+							m_Icn_contr->connect(m_Icn_comp);
+							m_IEcontroller->initialize(0);
 						}
-					}
-			return true;
+			}
 		}
 		return true;
 	}
