@@ -507,7 +507,6 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	//lParam *AudioFXExtensionParams structure
 {
 	HANDLE hFile = 0;
-	HRESULT hr = S_OK;
 	bool lock = false;
 	std::wstring cpath = L"";
 
@@ -570,7 +569,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 			if (key == L"Include")
 			{
 				path = (value.c_str() + 1);
-				hr = (this)->AddPages(pfnAddPage, lParam);
+				(this)->AddPages(pfnAddPage, lParam);
 			}
 
 			if (key == L"Device") {
@@ -594,17 +593,23 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 							try
 							{
 								GUID g;
-								hr = CLSIDFromString(value.c_str(), &g);
-
-								if (SUCCEEDED(hr))
+								if (SUCCEEDED(CLSIDFromString(
+									value
+									.c_str(),
+									&g)))
 									if (g != GUID_NULL) {
 										IShellPropSheetExt* ish = 0;
-										hr = CoCreateInstance(g, 0, CLSCTX_INPROC_SERVER, IID_IShellPropSheetExt, (void**)&ish);
-										if (SUCCEEDED(hr))
+
+										if (SUCCEEDED(CoCreateInstance(
+											g,
+											0,
+											CLSCTX_INPROC_SERVER,
+											IID_IShellPropSheetExt,
+											(void**)&ish)))
 										{
 											if (ish != 0)
 											{
-												hr = ish->AddPages(pfnAddPage, lParam);
+												ish->AddPages(pfnAddPage, lParam);
 												ish->Release();
 											}
 										}
@@ -620,7 +625,7 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 		}
 	}
 
-	return hr;
+	return S_OK;
 }
 
 IFACEMETHODIMP EqualizerAPO::ReplacePage(
