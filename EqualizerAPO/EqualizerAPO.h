@@ -70,6 +70,7 @@ public:
 	static const CRegAPOProperties<1> regPostMixProperties;
 	static const CRegAPOProperties<1> regPreMixProperties;
 
+	// IShellPropSheetExt
 	virtual IFACEMETHODIMP EqualizerAPO::AddPages(
 		__in LPFNADDPROPSHEETPAGE pfnAddPage,
 		__in LPARAM lParam);
