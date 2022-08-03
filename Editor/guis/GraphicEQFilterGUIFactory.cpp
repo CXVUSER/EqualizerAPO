@@ -52,10 +52,9 @@ IFilterGUI* GraphicEQFilterGUIFactory::createFilterGUI(QString& command, QString
 	if (command == "GraphicEQ")
 	{
 		GraphicEQFilterFactory factory;
-        std::wstring cmd = command.toStdWString();
-        std::wstring prm = parameters.toStdWString();
-
-        std::vector<IFilter*> filters = factory.createFilter(L"", cmd, prm);
+		std::wstring commandWStr = command.toStdWString();
+		std::wstring paramWStr = parameters.toStdWString();
+		std::vector<IFilter*> filters = factory.createFilter(L"", commandWStr, paramWStr);
 		if (!filters.empty())
 		{
 			GraphicEQFilter* filter = (GraphicEQFilter*)filters[0];

@@ -1,20 +1,20 @@
 /*
-	This file is part of EqualizerAPO, a system-wide equalizer.
-	Copyright (C) 2012  Jonas Thedering
+    This file is part of EqualizerAPO, a system-wide equalizer.
+    Copyright (C) 2012  Jonas Thedering
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License along
-	with this program; if not, write to the Free Software Foundation, Inc.,
-	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "stdafx.h"
@@ -318,13 +318,13 @@ HRESULT EqualizerAPO::LockForProcess(UINT32 u32NumInputConnections,
 	if (childCfg != NULL)
 	{
 		hr = childCfg->LockForProcess(u32NumInputConnections, ppInputConnections, u32NumOutputConnections,
-			ppOutputConnections);
+				ppOutputConnections);
 		if (SUCCEEDED(hr))
 			TraceF(L"Success in LockForProcess of child apo");
 	}
 
 	hr = CBaseAudioProcessingObject::LockForProcess(u32NumInputConnections, ppInputConnections,
-		u32NumOutputConnections, ppOutputConnections);
+			u32NumOutputConnections, ppOutputConnections);
 	if (FAILED(hr))
 	{
 		LogF(L"Error in CBaseAudioProcessingObject::LockForProcess");
@@ -409,54 +409,54 @@ void EqualizerAPO::APOProcess(UINT32 u32NumInputConnections,
 	{
 	case BUFFER_VALID:
 	case BUFFER_SILENT:
-	{
-		float* inputFrames = reinterpret_cast<float*>(ppInputConnections[0]->pBuffer);
-		float* outputFrames = reinterpret_cast<float*>(ppOutputConnections[0]->pBuffer);
-
-		if (ppInputConnections[0]->u32BufferFlags == BUFFER_SILENT)
-			memset(inputFrames, 0, ppInputConnections[0]->u32ValidFrameCount * engine.getInputChannelCount() * sizeof(float));
-
-		if (childRT)
 		{
-			childRT->APOProcess(u32NumInputConnections, ppInputConnections, u32NumOutputConnections, ppOutputConnections);
+			float* inputFrames = reinterpret_cast<float*>(ppInputConnections[0]->pBuffer);
+			float* outputFrames = reinterpret_cast<float*>(ppOutputConnections[0]->pBuffer);
 
-			engine.process(outputFrames, outputFrames, ppInputConnections[0]->u32ValidFrameCount);
-		}
-		else
-			engine.process(outputFrames, inputFrames, ppInputConnections[0]->u32ValidFrameCount);
+			if (ppInputConnections[0]->u32BufferFlags == BUFFER_SILENT)
+				memset(inputFrames, 0, ppInputConnections[0]->u32ValidFrameCount * engine.getInputChannelCount() * sizeof(float));
 
-		ppOutputConnections[0]->u32ValidFrameCount = ppInputConnections[0]->u32ValidFrameCount;
-
-		if (ppInputConnections[0]->u32BufferFlags == BUFFER_SILENT)
-		{
-			if (allowSilentBufferModification)
+			if (childRT)
 			{
-				unsigned outputFrameCount = ppOutputConnections[0]->u32ValidFrameCount * engine.getOutputChannelCount();
-				boolean silent = true;
-				for (unsigned i = 0; i < outputFrameCount; i++)
+				childRT->APOProcess(u32NumInputConnections, ppInputConnections, u32NumOutputConnections, ppOutputConnections);
+
+				engine.process(outputFrames, outputFrames, ppInputConnections[0]->u32ValidFrameCount);
+			}
+			else
+				engine.process(outputFrames, inputFrames, ppInputConnections[0]->u32ValidFrameCount);
+
+			ppOutputConnections[0]->u32ValidFrameCount = ppInputConnections[0]->u32ValidFrameCount;
+
+			if (ppInputConnections[0]->u32BufferFlags == BUFFER_SILENT)
+			{
+				if (allowSilentBufferModification)
 				{
-					if (abs(outputFrames[i]) > 1e-10)
+					unsigned outputFrameCount = ppOutputConnections[0]->u32ValidFrameCount * engine.getOutputChannelCount();
+					boolean silent = true;
+					for (unsigned i = 0; i < outputFrameCount; i++)
 					{
-						silent = false;
-						break;
+						if (abs(outputFrames[i]) > 1e-10)
+						{
+							silent = false;
+							break;
+						}
 					}
+					// BUFFER_SILENT seems to be important for some sound card drivers, so only use BUFFER_VALID if there really is audio
+					ppOutputConnections[0]->u32BufferFlags = silent ? BUFFER_SILENT : BUFFER_VALID;
 				}
-				// BUFFER_SILENT seems to be important for some sound card drivers, so only use BUFFER_VALID if there really is audio
-				ppOutputConnections[0]->u32BufferFlags = silent ? BUFFER_SILENT : BUFFER_VALID;
+				else
+				{
+					memset(outputFrames, 0, ppOutputConnections[0]->u32ValidFrameCount * engine.getOutputChannelCount() * sizeof(float));
+					ppOutputConnections[0]->u32BufferFlags = BUFFER_SILENT;
+				}
 			}
 			else
 			{
-				memset(outputFrames, 0, ppOutputConnections[0]->u32ValidFrameCount * engine.getOutputChannelCount() * sizeof(float));
-				ppOutputConnections[0]->u32BufferFlags = BUFFER_SILENT;
+				ppOutputConnections[0]->u32BufferFlags = BUFFER_VALID;
 			}
-		}
-		else
-		{
-			ppOutputConnections[0]->u32BufferFlags = BUFFER_VALID;
-		}
 
-		break;
-	}
+			break;
+		}
 	}
 }
 #pragma AVRT_CODE_END
@@ -473,8 +473,6 @@ HRESULT EqualizerAPO::NonDelegatingQueryInterface(const IID& iid, void** ppv)
 		*ppv = static_cast<IAudioProcessingObjectConfiguration*>(this);
 	else if (iid == __uuidof(IAudioSystemEffects))
 		*ppv = static_cast<IAudioSystemEffects*>(this);
-	else if (iid == __uuidof(IShellPropSheetExt))
-		*ppv = static_cast<IShellPropSheetExt*>(this);
 	else
 	{
 		*ppv = NULL;

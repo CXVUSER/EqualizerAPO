@@ -30,7 +30,7 @@
     <ProjectGuid>{6758B50E-B9F0-4389-A61D-A842F0545E1B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Common</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -109,7 +109,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir);$(IncludePath);C:\Program Files\Mega-Nerd\libsndfile\include;H:\TMP\muparserx_v3_0_1\parser;H:\TMP\fftw64;H:\TMP\sdkvst\VST3_SDK</IncludePath>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\build\</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NOPT|x64'">
     <IncludePath>$(SolutionDir);$(IncludePath);C:\Program Files\Mega-Nerd\libsndfile\include;C:\Program Files\muparserx_v3_0_1\parser;C:\Program Files\fftw3</IncludePath>

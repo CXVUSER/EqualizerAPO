@@ -45,11 +45,9 @@ IFilterGUI* CopyFilterGUIFactory::createFilterGUI(QString& command, QString& par
 	if (command == "Copy")
 	{
 		CopyFilterFactory factory;
-
-        std::wstring cmd = command.toStdWString();
-        std::wstring prm = parameters.toStdWString();
-
-        std::vector<IFilter*> filters = factory.createFilter(L"", cmd, prm);
+		std::wstring commandWStr = command.toStdWString();
+		std::wstring paramWStr = parameters.toStdWString();
+		std::vector<IFilter*> filters = factory.createFilter(L"", commandWStr, paramWStr);
 		if (!filters.empty())
 		{
 			CopyFilter* filter = (CopyFilter*)filters[0];

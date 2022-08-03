@@ -54,15 +54,9 @@ std::vector<std::wstring> VSTPluginFilter::initialize(float sampleRate, unsigned
 	}
 
 	effectChannelCount = max(firstEffect->numInputs(), firstEffect->numOutputs());
-
-	if (effectChannelCount == 0)
-	{
-		skipProcessing = true;
-		return channelNames;
-	}
-
+	// round up
 	effectCount = (channelCount + (effectChannelCount - 1)) / effectChannelCount;
-	effects = (VSTPluginInstance * *)MemoryHelper::alloc(effectCount * sizeof(VSTPluginInstance*));
+	effects = (VSTPluginInstance**)MemoryHelper::alloc(effectCount * sizeof(VSTPluginInstance*));
 	effects[0] = firstEffect;
 	for (unsigned i = 1; i < effectCount; i++)
 	{
@@ -203,45 +197,38 @@ std::unordered_map<std::wstring, float> VSTPluginFilter::getParamMap() const
 
 void VSTPluginFilter::cleanup()
 {
-	try
+	if (effects != NULL)
 	{
-		if (effects != NULL)
+		for (unsigned i = 0; i < effectCount; i++)
 		{
-			for (unsigned i = 0; i < effectCount; i++)
-			{
-				VSTPluginInstance* effect = effects[i];
-				effect->stopProcessing();
-				effect->~VSTPluginInstance();
-				MemoryHelper::free(effect);
-			}
-			MemoryHelper::free(effects);
-			effects = NULL;
+			VSTPluginInstance* effect = effects[i];
+			effect->stopProcessing();
+			effect->~VSTPluginInstance();
+			MemoryHelper::free(effect);
 		}
-		effectCount = 0;
-
-		if (emptyChannels != NULL)
-		{
-			for (unsigned i = 0; i < emptyChannelCount; i++)
-				MemoryHelper::free(emptyChannels[i]);
-			MemoryHelper::free(emptyChannels);
-			emptyChannels = NULL;
-		}
-		emptyChannelCount = 0;
-
-		if (inputArray != NULL)
-		{
-			MemoryHelper::free(inputArray);
-			inputArray = NULL;
-		}
-
-		if (outputArray != NULL)
-		{
-			MemoryHelper::free(outputArray);
-			outputArray = NULL;
-		}
+		MemoryHelper::free(effects);
+		effects = NULL;
 	}
-	catch (...)
+	effectCount = 0;
+
+	if (emptyChannels != NULL)
 	{
-		TraceF(L"Failed to destruct VST Plugin");
+		for (unsigned i = 0; i < emptyChannelCount; i++)
+			MemoryHelper::free(emptyChannels[i]);
+		MemoryHelper::free(emptyChannels);
+		emptyChannels = NULL;
+	}
+	emptyChannelCount = 0;
+
+	if (inputArray != NULL)
+	{
+		MemoryHelper::free(inputArray);
+		inputArray = NULL;
+	}
+
+	if (outputArray != NULL)
+	{
+		MemoryHelper::free(outputArray);
+		outputArray = NULL;
 	}
 }

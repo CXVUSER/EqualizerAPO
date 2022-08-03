@@ -40,11 +40,9 @@ IFilterGUI* DelayFilterGUIFactory::createFilterGUI(QString& command, QString& pa
 	if (command == "Delay")
 	{
 		DelayFilterFactory factory;
-
-        std::wstring cmd = command.toStdWString();
-        std::wstring prm = parameters.toStdWString();
-
-        std::vector<IFilter*> filters = factory.createFilter(L"", cmd, prm);
+		std::wstring commandWStr = command.toStdWString();
+		std::wstring paramWStr = parameters.toStdWString();
+		std::vector<IFilter*> filters = factory.createFilter(L"", commandWStr, paramWStr);
 		if (!filters.empty())
 		{
 			DelayFilter* filter = (DelayFilter*)filters[0];

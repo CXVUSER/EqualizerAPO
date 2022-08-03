@@ -22,9 +22,9 @@
 #include <Unknwn.h>
 #include <audioenginebaseapo.h>
 #include <BaseAudioProcessingObject.h>
-#include "FilterEngine.h"
 #include <Shobjidl.h>
-#include "..//helpers/StringHelper.h"
+#include <helpers/StringHelper.h>
+#include "FilterEngine.h"
 
 class INonDelegatingUnknown
 {
@@ -74,20 +74,19 @@ public:
 	virtual IFACEMETHODIMP EqualizerAPO::AddPages(
 		__in LPFNADDPROPSHEETPAGE pfnAddPage,
 		__in LPARAM lParam);
-
 	virtual IFACEMETHODIMP EqualizerAPO::ReplacePage(
 		__in UINT uPageID,
 		__in LPFNADDPROPSHEETPAGE pfnReplacePage,
 		__in LPARAM lParam);
-
 
 private:
 	long refCount;
 	IUnknown* pUnkOuter;
 	FilterEngine engine;
 	bool allowSilentBufferModification;
-	bool first = false;
 	std::wstring path;
+	bool first = false;
+
 	void resetChild();
 
 	IAudioProcessingObject* childAPO;

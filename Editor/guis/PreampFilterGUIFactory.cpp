@@ -34,12 +34,10 @@ IFilterGUI* PreampFilterGUIFactory::createFilterGUI(QString& command, QString& p
 
 	if (command == "Preamp")
 	{
-        PreampFilterFactory factory;
-
-        std::wstring cmd = command.toStdWString();
-        std::wstring prm = parameters.toStdWString();
-
-        std::vector<IFilter*> filters = factory.createFilter(L"", cmd, prm);
+		PreampFilterFactory factory;
+		std::wstring commandWStr = command.toStdWString();
+		std::wstring paramWStr = parameters.toStdWString();
+		std::vector<IFilter*> filters = factory.createFilter(L"", commandWStr, paramWStr);
 		if (!filters.empty())
 		{
 			PreampFilter* filter = (PreampFilter*)filters[0];

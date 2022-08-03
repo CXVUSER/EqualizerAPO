@@ -18,12 +18,6 @@ QMAKE_LFLAGS += /STACK:32000000
 DEFINES += _UNICODE
 
 SOURCES += main.cpp\
-    ../IPropStore.cpp \
-    ../filters/APOFilter.cpp \
-    ../filters/APOFilterFactory.cpp \
-    ../filters/PluginFactory.cpp \
-    ../filters/VST3PluginFilter.cpp \
-    ../filters/VST3PluginFilterFactory.cpp \
 	../helpers/LogHelper.cpp \
 	../helpers/StringHelper.cpp \
 	../helpers/RegistryHelper.cpp \
@@ -143,12 +137,6 @@ SOURCES += main.cpp\
     widgets/MiddleClickTabBar.cpp
 
 HEADERS  += \
-    ../IPropStore.h \
-    ../filters/APOFilter.h \
-    ../filters/APOFilterFactory.h \
-    ../filters/PluginFactory.h \
-    ../filters/VST3PluginFilter.h \
-    ../filters/VST3PluginFilterFactory.h \
 	../helpers/LogHelper.h \
 	../helpers/StringHelper.h \
 	../helpers/RegistryHelper.h \
@@ -294,7 +282,7 @@ FORMS    += \
 	guis/LoudnessCorrectionFilterGUI.ui \
 	guis/LoudnessCorrectionFilterGUIDialog.ui
 
-INCLUDEPATH += $$PWD/.. "C:/Program Files/Mega-Nerd/libsndfile/include" "H:\TMP\fftw64" "H:/TMP/muparserx_v3_0_1/parser"
+INCLUDEPATH += $$PWD/.. "C:/Program Files/libsndfile/include" "C:/Program Files/fftw3" "C:/Program Files/muparserx_v3_0_1/parser"
 LIBS += user32.lib advapi32.lib version.lib ole32.lib Shlwapi.lib authz.lib crypt32.lib dbghelp.lib winmm.lib libsndfile-1.lib libfftw3f-3.lib
 
 build_pass:CONFIG(debug, debug|release) {
@@ -304,9 +292,9 @@ build_pass:CONFIG(debug, debug|release) {
 }
 
 contains(QT_ARCH, x86_64) {
-        QMAKE_LIBDIR += "C:/Program Files/Mega-Nerd/libsndfile/lib" "H:\TMP\fftw64" "H:/TMP/muparserx_v3_0_1/lib64"
+	QMAKE_LIBDIR += "C:/Program Files/libsndfile/lib" "C:/Program Files/fftw3" "C:/Program Files/muparserx_v3_0_1/lib64"
 } else {
-        QMAKE_LIBDIR += "C:/Program Files (x86)/Mega-Nerd/libsndfile/lib" "H:\TMP\fftw32" "H:/TMP/muparserx_v3_0_1/lib"
+	QMAKE_LIBDIR += "C:/Program Files (x86)/libsndfile/lib" "C:/Program Files (x86)/fftw3" "C:/Program Files/muparserx_v3_0_1/lib"
 }
 
 RESOURCES += \

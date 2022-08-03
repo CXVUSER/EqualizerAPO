@@ -53,7 +53,7 @@ protected:
 	void run() override;
 
 private:
-    QMutex mutex;
+	QMutex mutex;
 	QWaitCondition condition;
 	bool quit = false;
 

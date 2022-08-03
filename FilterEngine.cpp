@@ -55,10 +55,9 @@
 #include "filters/ConvolutionFilterFactory.h"
 #include "filters/GraphicEQFilterFactory.h"
 #include "filters/VSTPluginFilterFactory.h"
+#include "filters/loudnessCorrection/LoudnessCorrectionFilterFactory.h"
 #include "filters/VST3PluginFilterFactory.h"
 #include "filters/APOFilterFactory.h"
-#include "filters/PluginFactory.h"
-#include "filters/loudnessCorrection/LoudnessCorrectionFilterFactory.h"
 
 using namespace std;
 using namespace mup;
@@ -95,10 +94,9 @@ FilterEngine::FilterEngine()
 	factories.push_back(new ConvolutionFilterFactory());
 	factories.push_back(new GraphicEQFilterFactory());
 	factories.push_back(new VSTPluginFilterFactory());
-	factories.push_back(new VST3PluginFilterFactory());
 	factories.push_back(new LoudnessCorrectionFilterFactory());
+	factories.push_back(new VST3PluginFilterFactory());
 	factories.push_back(new APOFilterFactory());
-	factories.push_back(new PluginFactory());
 }
 
 FilterEngine::~FilterEngine()

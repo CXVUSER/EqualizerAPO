@@ -28,8 +28,7 @@
 #include <string>
 #include <sndfile.h>
 #include <tclap/CmdLine.h>
-#define INITGUID
-#include <mmdeviceapi.h>
+
 #include "version.h"
 #include "FilterEngine.h"
 #include "helpers/LogHelper.h"
@@ -37,14 +36,12 @@
 #include "helpers/PrecisionTimer.h"
 #include "helpers/MemoryHelper.h"
 
-
 using namespace std;
 
 int main(int argc, char** argv)
 {
 	try
 	{
-		CoInitialize(0);
 		stringstream versionStream;
 		versionStream << MAJOR << "." << MINOR;
 		if (REVISION != 0)

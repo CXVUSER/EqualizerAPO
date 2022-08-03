@@ -19,6 +19,7 @@
 
 #include "stdafx.h"
 #include <wincrypt.h>
+#include <inttypes.h>
 #include "StringHelper.h"
 #include "version.h"
 #include "VSTPluginLibrary.h"
@@ -32,7 +33,7 @@ static intptr_t callback(AEffect* effect, int32_t opcode, int32_t index, intptr_
 {
 	VSTPluginInstance* instance = effect != NULL ? (VSTPluginInstance*)effect->user : NULL;
 #ifdef _DEBUG
-	printf("vst: %p opcode: %d index: %d value: %d ptr: %p opt: %f user: %p\n",
+	printf("vst: %p opcode: %d index: %d value: %" PRIdPTR " ptr: %p opt: %f user: %p\n",
 		effect, opcode, index, value, ptr, opt, effect != NULL ? effect->user : NULL);
 	fflush(stdout);
 #endif
@@ -59,10 +60,10 @@ static intptr_t callback(AEffect* effect, int32_t opcode, int32_t index, intptr_
 			return 0;
 
 	case audioMasterNeedIdle:
-		return effect->dispatcher(effect, effIdle, 0, 0, NULL, 0.0f);
+		return effect != NULL ? effect->dispatcher(effect, effIdle, 0, 0, NULL, 0.0f) : 0;
 
 	case audioMasterUpdateDisplay:
-		return effect->dispatcher(effect, effEditIdle, 0, 0, NULL, 0.0f);
+		return effect != NULL ? effect->dispatcher(effect, effEditIdle, 0, 0, NULL, 0.0f) : 0;
 
 	case audioMasterGetTime:
 		return 0;
@@ -199,6 +200,7 @@ std::wstring VSTPluginInstance::getName() const
 	char buf[256];
 	memset(buf, 0, sizeof(buf));
 	effect->dispatcher(effect, effGetEffectName, 0, 0, buf, 0.0f);
+	buf[255] = '\0'; // just to be sure
 
 	return StringHelper::toWString(buf, CP_UTF8);
 }
@@ -238,22 +240,14 @@ void VSTPluginInstance::setLanguage(int value)
 	language = value;
 }
 
-
-
 void VSTPluginInstance::prepareForProcessing(float sampleRate, int blockSize)
 {
 	if (effect == NULL)
 		return;
 
 	this->sampleRate = sampleRate;
-
-	//int effVendorSpecified = 0x32;
-	//char x[255];
-	//effect->dispatcher(effect, 44, 0, 0, NULL, 0.0f);
-	//effect->dispatcher(effect, 77, 0, 0, NULL, 0.0f);
-		
-	effect->dispatcher(effect, effSetBlockSize, 0, blockSize, NULL, 0.0f);
 	effect->dispatcher(effect, effSetSampleRate, 0, 0, NULL, sampleRate);
+	effect->dispatcher(effect, effSetBlockSize, 0, blockSize, NULL, 0.0f);
 }
 
 void VSTPluginInstance::writeToEffect(const std::wstring& chunkData, const std::unordered_map<std::wstring, float>& paramMap)
@@ -279,6 +273,7 @@ void VSTPluginInstance::writeToEffect(const std::wstring& chunkData, const std::
 		{
 			char buf[256];
 			effect->dispatcher(effect, effGetParamName, i, 0, buf, 0.0f);
+			buf[255] = '\0'; // just to be sure
 			wstring name = StringHelper::toWString(buf, CP_UTF8);
 			auto it = paramMap.find(name);
 			if (it != paramMap.end())
@@ -299,8 +294,8 @@ void VSTPluginInstance::readFromEffect(std::wstring& chunkData, std::unordered_m
 	{
 		BYTE* chunk = NULL;
 		int size = (int)effect->dispatcher(effect, effGetChunk, 1, 0, &chunk, 0.0f);
-		DWORD stringLength;
-		CryptBinaryToStringW(chunk, size, CRYPT_STRING_BASE64, NULL, &stringLength);
+		DWORD stringLength = 0;
+		CryptBinaryToStringW(chunk, size, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &stringLength);
 		wchar_t* string = new wchar_t[stringLength];
 		if (CryptBinaryToStringW(chunk, size, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, string, &stringLength) == TRUE)
 			chunkData = string;
@@ -312,6 +307,7 @@ void VSTPluginInstance::readFromEffect(std::wstring& chunkData, std::unordered_m
 		{
 			char buf[256];
 			effect->dispatcher(effect, effGetParamName, i, 0, buf, 0.0f);
+			buf[255] = '\0'; // just to be sure
 			float value = effect->getParameter(effect, i);
 			paramMap[StringHelper::toWString(buf, CP_UTF8)] = value;
 		}
@@ -323,7 +319,6 @@ void VSTPluginInstance::startProcessing()
 	if (effect == NULL)
 		return;
 
-	//effect->dispatcher(effect, effCanDo, 0, 0, (void*) "bypass", 0);
 	effect->dispatcher(effect, effMainsChanged, 0, 1, NULL, 0.0f);
 	effect->dispatcher(effect, effStartProcess, 0, 0, NULL, 0.0f);
 }

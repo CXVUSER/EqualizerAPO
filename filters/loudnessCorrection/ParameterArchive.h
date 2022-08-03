@@ -26,7 +26,7 @@
 
 template<typename type> struct to_WString_type_traits
 {
-	static inline std::wstring cast_ToWString(std::wstring input) {return std::wstring();}
+	static inline std::wstring cast_ToWString(const type& input) {return std::wstring();}
 };
 
 template<> struct to_WString_type_traits<float>
@@ -99,7 +99,7 @@ template<> struct constructor_traits<std::wstring>
 	static inline std::wstring initFrom(std::wstring input) {return input;}
 };
 
-template<> struct constructor_traits<std::vector<char> >
+template<> struct constructor_traits<std::vector<char>>
 {
 	static inline std::wstring initFrom(std::vector<char> input)
 	{

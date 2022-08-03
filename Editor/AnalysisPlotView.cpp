@@ -36,8 +36,7 @@ void AnalysisPlotView::drawBackground(QPainter* painter, const QRectF& rect)
 
 	painter->setRenderHint(QPainter::Antialiasing, true);
 	AnalysisPlotScene* s = qobject_cast<AnalysisPlotScene*>(scene());
-    std::vector<FilterNode> asd = s->getNodes();
-    std::vector<FilterNode>& nodes = asd;
+	const std::vector<FilterNode>& nodes = s->getNodes();
 	GainIterator gainIterator(nodes);
 	QPainterPath path;
 	bool first = true;
