@@ -88,16 +88,16 @@ private:
 	IAudioProcessingObjectRT* m_IAudRT = 0;
 	IAudioProcessingObjectConfiguration* m_IAudConf = 0;
 
-	APO_CONNECTION_PROPERTY m_cp_in = { 0 };
+	APO_CONNECTION_PROPERTY m_cp_in = {};
 	APO_CONNECTION_PROPERTY* m_cp_in_p = &m_cp_in;
-	APO_CONNECTION_PROPERTY m_cp_out = { 0 };
+	APO_CONNECTION_PROPERTY m_cp_out = {};
 	APO_CONNECTION_PROPERTY* m_cp_out_p = &m_cp_out;
 	APO_CONNECTION_DESCRIPTOR m_cd_in;
 	APO_CONNECTION_DESCRIPTOR* m_cd_in_p = &m_cd_in;
 	APO_CONNECTION_DESCRIPTOR m_cd_out;
 	APO_CONNECTION_DESCRIPTOR* m_cd_out_p = &m_cd_out;
 
-	APOInitSystemEffects2 m_initstruct = { 0 };
+	APOInitSystemEffects2 m_initstruct = {};
 	IAudioMediaType* m_iAudType = 0;
 	IMMDeviceEnumerator* m_pEnumerator = 0;
 	IMMDeviceCollection* m_pCollection = 0;

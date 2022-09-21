@@ -31,6 +31,7 @@
 #ifndef _IPROP_FX_
 #define _IPROP_FX_
 
+#define NOT_IMPL { return E_NOTIMPL; };
 #define MM_DEV_AUD_REG_PATH L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\"
 
 class IPropertyStoreFX : public IUnknown
@@ -45,10 +46,10 @@ public:
 	virtual ULONG Release();
 
 	//IPropertyStore
-	virtual HRESULT Getcount() { return E_NOTIMPL; };
-	virtual HRESULT Getat() { return E_NOTIMPL; };
+	virtual HRESULT Getcount() NOT_IMPL
+	virtual HRESULT Getat() NOT_IMPL
 	virtual HRESULT Getvalue(REFPROPERTYKEY key, PROPVARIANT* pv);
-	virtual HRESULT Setvalue() { return E_NOTIMPL; };
+	virtual HRESULT Setvalue() NOT_IMPL
 	virtual bool TryOpenPropertyStoreRegKey();
 	HRESULT DeserializePropVarinat(int type, void* src, size_t cb, PROPVARIANT* dest);
 private:

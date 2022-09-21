@@ -220,10 +220,10 @@ public:
 	void resetPlugin();
 private:
 
-	FilterEngine* m_Eapo = 0;
+	FilterEngine* m_Eapo = {};
 	std::wstring m_Path;
 	std::wstring m_Settings;
-	size_t m_ChannelCount = 0;
+	size_t m_ChannelCount = {};
 
 	IComponent* m_IComponent;
 	IAudioProcessor* m_IAudprocessor;

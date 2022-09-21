@@ -71,13 +71,13 @@ public:
 	static const CRegAPOProperties<1> regPreMixProperties;
 
 	// IShellPropSheetExt
-	virtual IFACEMETHODIMP EqualizerAPO::AddPages(
-		__in LPFNADDPROPSHEETPAGE pfnAddPage,
-		__in LPARAM lParam);
-	virtual IFACEMETHODIMP EqualizerAPO::ReplacePage(
-		__in UINT uPageID,
-		__in LPFNADDPROPSHEETPAGE pfnReplacePage,
-		__in LPARAM lParam);
+	virtual HRESULT __stdcall EqualizerAPO::AddPages(
+		LPFNADDPROPSHEETPAGE pfnAddPage,
+		LPARAM lParam);
+	virtual HRESULT __stdcall EqualizerAPO::ReplacePage(
+		UINT uPageID,
+		LPFNADDPROPSHEETPAGE pfnReplacePage,
+		LPARAM lParam);
 
 private:
 	long refCount;

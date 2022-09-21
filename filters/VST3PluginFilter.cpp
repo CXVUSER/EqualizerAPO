@@ -142,7 +142,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		goto LEAVE_;
 	}
 
-	unsigned int frameCount = sampleRate / 100;
+	//unsigned int frameCount = sampleRate / 100;
 
 	//get global functions
 	auto _InitDll = func(InitModuleFunc, m_Plugindll, "InitDll");
@@ -224,8 +224,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 		m_Out.numChannels = m_ChannelCount;
 	}
 
-	setup.maxSamplesPerBlock = (m_In.numChannels != m_ChannelCount) ? (frameCount << 1) :
-		(frameCount * m_ChannelCount);
+	setup.maxSamplesPerBlock = (m_In.numChannels != m_ChannelCount) ? (maxFrameCount << 1) :
+		(maxFrameCount * m_ChannelCount);
 
 	if (m_IAudprocessor->setupProcessing(setup) == kResultFalse)
 		goto LEAVE_;

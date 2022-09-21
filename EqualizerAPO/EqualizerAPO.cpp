@@ -499,9 +499,9 @@ ULONG EqualizerAPO::NonDelegatingRelease()
 	return refCount;
 }
 
-IFACEMETHODIMP EqualizerAPO::AddPages(
-	__in LPFNADDPROPSHEETPAGE pfnAddPage,
-	__in LPARAM lParam)
+HRESULT __stdcall EqualizerAPO::AddPages(
+	LPFNADDPROPSHEETPAGE pfnAddPage,
+	LPARAM lParam)
 	//lParam *AudioFXExtensionParams structure
 {
 	HANDLE hFile = 0;
@@ -626,10 +626,10 @@ IFACEMETHODIMP EqualizerAPO::AddPages(
 	return S_OK;
 }
 
-IFACEMETHODIMP EqualizerAPO::ReplacePage(
-	__in UINT uPageID,
-	__in LPFNADDPROPSHEETPAGE pfnReplacePage,
-	__in LPARAM lParam
+HRESULT __stdcall EqualizerAPO::ReplacePage(
+	UINT uPageID,
+	LPFNADDPROPSHEETPAGE pfnReplacePage,
+	LPARAM lParam
 )
 {
 	return E_NOTIMPL;

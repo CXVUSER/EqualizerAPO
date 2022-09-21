@@ -48,9 +48,9 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 	}
 
 	//calc buffer size
-	int frameCount = sampleRate / 100;
+	//int frameCount = sampleRate / 100;
 
-	size_t buffersize = ((frameCount * m_ch_cnt) * sizeof(float)) << 1;
+	size_t buffersize = ((maxFrameCount * m_ch_cnt) * sizeof(float)) << 1;
 	
 	m_bIn = (float*) MemoryHelper::alloc(buffersize);
 	m_bOut = (float*) ((char*)m_bIn + (buffersize >> 1));
@@ -164,7 +164,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 
 	if (m_IAudConf)
 	{
-		WAVEFORMATEX w = { 0 };
+		WAVEFORMATEX w = {};
 		w.nChannels = (WORD) m_ch_cnt;
 		w.nSamplesPerSec = (DWORD) sampleRate;
 
@@ -191,14 +191,14 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 			//Configure input buffer
 			m_cd_in.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
 			m_cd_in.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-			m_cd_in.u32MaxFrameCount = frameCount;
+			m_cd_in.u32MaxFrameCount = maxFrameCount;
 			m_cd_in.pFormat = m_iAudType;
 			m_cd_in.pBuffer = (UINT_PTR) m_bIn;
 
 			//Configure Out buffer
 			m_cd_out.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
 			m_cd_out.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
-			m_cd_out.u32MaxFrameCount = frameCount;
+			m_cd_out.u32MaxFrameCount = maxFrameCount;
 			m_cd_out.pFormat = m_iAudType;
 			m_cd_out.pBuffer = (UINT_PTR) m_bOut;
 
