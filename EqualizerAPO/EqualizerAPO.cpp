@@ -615,7 +615,7 @@ HRESULT __stdcall EqualizerAPO::AddPages(
 							}
 							catch (...)
 							{
-								TraceF(L"APOUI: UI library crashed name: %s", value.c_str());
+								TraceF(L"APOProxy: UI library crashed name: %s", value.c_str());
 							}
 						}
 					}

@@ -34,7 +34,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 	m_ch_cnt = channelNames.size();
 	HRESULT hr = 0;
 	EDataFlow devicetype = eRender;
-	WAVEFORMATEX* sf;
+	WAVEFORMATEX* sf{};
 
 	if (m_ch_cnt == 0) {
 		goto LEAVE_;
@@ -43,7 +43,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 		goto LEAVE_;
 	}
 	if (m_Eapo->getDeviceGuid() == L"") {
-		TraceF(L"APO: Device guid not specified");
+		TraceF(L"APOProxy: Device guid not specified");
 		goto LEAVE_;
 	}
 
@@ -114,7 +114,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 				if (hlp != 0) {
 					m_IFXProp = new(hlp) IPropertyStoreFX(m_Eapo->getDeviceGuid(), KEY_READ);
 					if (false == m_IFXProp->TryOpenPropertyStoreRegKey())
-						TraceF(L"APO: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
+						TraceF(L"APOProxy: This audio device Guid: %s Name: %s does not contain FxProperties section in registry",
 							m_Eapo->getDeviceGuid().data(),
 							m_Eapo->getDeviceName().data());
 				}
@@ -145,7 +145,7 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 			{
 				if (SUCCEEDED(m_IAudObj->GetRegistrationProperties(&m_aProp)))
 				{
-					TraceF(L"APO: Successfully initialized Name: %s "
+					TraceF(L"APOProxy: Successfully initialized Name: %s "
 						"Copyright: %s Max Input cconnections %d "
 						" Max Output connections %d "
 						" APO interfaces count %d ",
@@ -239,7 +239,7 @@ void APOProxyFilter::process(float** output, float** input, unsigned frameCount)
 		
 		//pInput
 		m_cp_in.u32ValidFrameCount = frameCount;
-
+			
 		//pOutput
 		m_cp_out.u32BufferFlags = BUFFER_INVALID;
 		m_cp_out.u32ValidFrameCount = frameCount;
@@ -299,6 +299,6 @@ APOProxyFilter::~APOProxyFilter()
 
 	}
 	catch (...) {
-		TraceF(L"APO: Deinitialize failed");
+		TraceF(L"APOProxy: Deinitialize failed");
 	}
 }
