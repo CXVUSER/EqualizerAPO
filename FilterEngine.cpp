@@ -58,6 +58,7 @@
 #include "filters/loudnessCorrection/LoudnessCorrectionFilterFactory.h"
 #include "filters/VST3PluginFilterFactory.h"
 #include "filters/APOFilterFactory.h"
+#include "filters/PluginFactory.h"
 
 using namespace std;
 using namespace mup;
@@ -97,6 +98,7 @@ FilterEngine::FilterEngine()
 	factories.push_back(new LoudnessCorrectionFilterFactory());
 	factories.push_back(new VST3PluginFilterFactory());
 	factories.push_back(new APOFilterFactory());
+	factories.push_back(new PluginFactory());
 }
 
 FilterEngine::~FilterEngine()
