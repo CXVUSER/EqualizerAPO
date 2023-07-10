@@ -28,9 +28,6 @@
 #include <Functiondiscoverykeys_devpkey.h>
 #include "helpers/RegistryHelper.h"
 
-#ifndef _IPROP_FX_
-#define _IPROP_FX_
-
 #define NOT_IMPL { return E_NOTIMPL; };
 #define MM_DEV_AUD_REG_PATH L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\"
 
@@ -62,4 +59,3 @@ private:
 	std::wstring m_guid;
 	CRITICAL_SECTION m_cr;
 };
-#endif
