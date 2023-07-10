@@ -60,9 +60,9 @@ std::vector<IFilter*> PluginFactory::createFilter(const std::wstring& configPath
 		try
 		{
 			HMODULE hm = LoadLibraryW(path.c_str());
-			auto CoCreatePluginInstance = reinterpret_cast<proc>(GetProcAddress(hm, "CoCreatePluginInstance"));
-			if (CoCreatePluginInstance) {
-				filter = CoCreatePluginInstance();
+			auto CreatePlugin = reinterpret_cast<proc>(GetProcAddress(hm, "CreatePlugin"));
+			if (CreatePlugin) {
+				filter = CreatePlugin();
 
 				if (filter) {
 					filter->setSettings(Data.c_str());
