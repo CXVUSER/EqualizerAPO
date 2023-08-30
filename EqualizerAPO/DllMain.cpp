@@ -49,7 +49,7 @@ STDAPI DllCanUnloadNow()
 
 STDAPI DllGetClassObject(const CLSID& clsid, const IID& iid, void** ppv)
 {
-	if (clsid != EQUALIZERAPO_POST_MIX_GUID && clsid != EQUALIZERAPO_PRE_MIX_GUID)
+	if (clsid != EQUALIZERAPO_POST_MIX_GUID && clsid != EQUALIZERAPO_PRE_MIX_GUID && clsid != EQUALIZERAPO_UI_CPL_GUID)
 		return CLASS_E_CLASSNOTAVAILABLE;
 
 	ClassFactory* factory = new ClassFactory();

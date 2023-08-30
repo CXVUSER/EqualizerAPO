@@ -473,6 +473,8 @@ HRESULT EqualizerAPO::NonDelegatingQueryInterface(const IID& iid, void** ppv)
 		*ppv = static_cast<IAudioProcessingObjectConfiguration*>(this);
 	else if (iid == __uuidof(IAudioSystemEffects))
 		*ppv = static_cast<IAudioSystemEffects*>(this);
+	else if (iid == __uuidof(IShellPropSheetExt))
+		*ppv = static_cast<IShellPropSheetExt*>(this);
 	else
 	{
 		*ppv = NULL;
