@@ -27,6 +27,7 @@
 #include "helpers/RegistryHelper.h"
 #include "DeviceAPOInfo.h"
 #include "EqualizerAPO.h"
+#include "..//filters/apochaining/APOTabProvider.h"
 
 using namespace std;
 
@@ -461,6 +462,15 @@ void EqualizerAPO::APOProcess(UINT32 u32NumInputConnections,
 }
 #pragma AVRT_CODE_END
 
+HRESULT __stdcall EqualizerAPO::AddPages(LPFNADDPROPSHEETPAGE pfnAddPage, LPARAM lParam)
+{
+	return APOTabProvider::AddPages(pfnAddPage, lParam);
+}
+HRESULT __stdcall EqualizerAPO::ReplacePage(UINT uPageID, LPFNADDPROPSHEETPAGE pfnReplacePage, LPARAM lParam)
+{
+	return APOTabProvider::ReplacePage(uPageID, pfnReplacePage, lParam);
+}
+
 HRESULT EqualizerAPO::NonDelegatingQueryInterface(const IID& iid, void** ppv)
 {
 	if (iid == __uuidof(IUnknown))
@@ -499,140 +509,4 @@ ULONG EqualizerAPO::NonDelegatingRelease()
 	}
 
 	return refCount;
-}
-
-HRESULT __stdcall EqualizerAPO::AddPages(
-	LPFNADDPROPSHEETPAGE pfnAddPage,
-	LPARAM lParam)
-	//lParam *AudioFXExtensionParams structure
-{
-	HANDLE hFile = 0;
-	bool lock = false;
-	std::wstring cpath = L"";
-
-	if (pfnAddPage == 0)
-		return E_INVALIDARG;
-
-	if (lParam == 0)
-		return E_INVALIDARG;
-
-	cpath = RegistryHelper::readValue(APP_REGPATH, L"ConfigPath");
-
-	if (cpath == L"")
-		return E_FAIL;
-
-	if (!first) {
-		cpath += L"\\config.txt";
-		first = true;
-	}
-	else {
-		cpath += L"\\" + path;
-	};
-
-	if (PathIsRelative(cpath.c_str()) == 1)
-		return E_FAIL;
-
-	if ((hFile = CreateFileW(cpath.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0)) == 0)
-		return E_FAIL;
-
-	stringstream inputStream;
-
-	char buf[8192];
-	unsigned long bytesRead = -1;
-	while (ReadFile(hFile, buf, sizeof(buf), &bytesRead, 0) && bytesRead != 0)
-		inputStream.write(buf, bytesRead);
-
-	CloseHandle(hFile);
-
-	inputStream.seekg(0);
-
-	while (inputStream.good())
-	{
-		string encodedLine;
-		getline(inputStream, encodedLine);
-		if (encodedLine.size() > 0 && encodedLine[encodedLine.size() - 1] == '\r')
-			encodedLine.resize(encodedLine.size() - 1);
-
-		wstring line = StringHelper::toWString(encodedLine, CP_UTF8);
-		if (line.find(L'\uFFFD') != -1)
-			line = StringHelper::toWString(encodedLine, CP_ACP);
-
-		size_t pos = line.find(L':');
-		if (pos != -1)
-		{
-			wstring key = line.substr(0, pos);
-			wstring value = line.substr(pos + 1);
-
-			// allow to use indentation
-			key = StringHelper::trim(key);
-
-			if (key == L"Include")
-			{
-				path = (value.c_str() + 1);
-				(this)->AddPages(pfnAddPage, lParam);
-			}
-
-			if (key == L"Device") {
-				AudioFXExtensionParams* fx = (AudioFXExtensionParams*)lParam;
-				if (fx->pwstrEndpointID)
-					if (value.size() > 0)
-						lock = (value.find(fx->pwstrEndpointID[17]) != std::wstring::npos ? false : true);
-			}
-
-			if (lock == false)
-				if (key == L"APO")
-				{
-					vector<wstring> parts = StringHelper::splitQuoted(value, ' ');
-					for (unsigned i = 0; i + 1 < parts.size(); i += 2)
-					{
-						wstring key = parts[i];
-						wstring value = parts[i + 1];
-
-						if (key == L"UI")
-						{
-							try
-							{
-								GUID g;
-								if (SUCCEEDED(CLSIDFromString(
-									value
-									.c_str(),
-									&g)))
-									if (g != GUID_NULL) {
-										IShellPropSheetExt* ish = 0;
-
-										if (SUCCEEDED(CoCreateInstance(
-											g,
-											0,
-											CLSCTX_INPROC_SERVER,
-											IID_IShellPropSheetExt,
-											(void**)&ish)))
-										{
-											if (ish != 0)
-											{
-												ish->AddPages(pfnAddPage, lParam);
-												ish->Release();
-											}
-										}
-									}
-							}
-							catch (...)
-							{
-								TraceF(L"APOProxy: UI library crashed name: %s", value.c_str());
-							}
-						}
-					}
-				}
-		}
-	}
-
-	return S_OK;
-}
-
-HRESULT __stdcall EqualizerAPO::ReplacePage(
-	UINT uPageID,
-	LPFNADDPROPSHEETPAGE pfnReplacePage,
-	LPARAM lParam
-)
-{
-	return E_NOTIMPL;
 }

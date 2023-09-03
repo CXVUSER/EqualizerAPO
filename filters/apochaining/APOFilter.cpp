@@ -179,7 +179,6 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 			if (0 == m_iAudType)
 				goto LEAVE_;
 
-			//setting buffer
 			m_cp_in.u32BufferFlags = BUFFER_VALID;
 			m_cp_in.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
 			m_cp_in.pBuffer = (UINT_PTR) m_bIn;
@@ -188,14 +187,12 @@ std::vector<std::wstring> APOProxyFilter::initialize(float sampleRate, unsigned 
 			m_cp_out.u32Signature = APO_CONNECTION_PROPERTY_SIGNATURE;
 			m_cp_out.pBuffer = (UINT_PTR) m_bOut;
 
-			//Configure input buffer
 			m_cd_in.Type = APO_CONNECTION_BUFFER_TYPE_ALLOCATED;
 			m_cd_in.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
 			m_cd_in.u32MaxFrameCount = maxFrameCount;
 			m_cd_in.pFormat = m_iAudType;
 			m_cd_in.pBuffer = (UINT_PTR) m_bIn;
 
-			//Configure Out buffer
 			m_cd_out.Type = APO_CONNECTION_BUFFER_TYPE_EXTERNAL;
 			m_cd_out.u32Signature = APO_CONNECTION_DESCRIPTOR_SIGNATURE;
 			m_cd_out.u32MaxFrameCount = maxFrameCount;

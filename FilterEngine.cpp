@@ -57,7 +57,7 @@
 #include "filters/VSTPluginFilterFactory.h"
 #include "filters/loudnessCorrection/LoudnessCorrectionFilterFactory.h"
 #include "filters/VST3PluginFilterFactory.h"
-#include "filters/APOFilterFactory.h"
+#include "filters/apochaining/APOFilterFactory.h"
 #include "filters/PluginFactory.h"
 
 using namespace std;

@@ -27,7 +27,7 @@
 #include <propvarutil.h>
 #include <memory>
 #include "FilterEngine.h"
-#include "..//helpers/RegistryHelper.h"
+#include "..//..//helpers/RegistryHelper.h"
 #include "IPropStore.h"
 
 //KS_NODETYPE				{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},0
@@ -38,12 +38,12 @@
 //UI						{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},3
 //Reserved					{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},4
 
-// WIN 8 and 10
+// WIN 8 and 10/11
 //GUID SFX; // Stream FX	{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},5
 //GUID MFX; // Mode FX		{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},6
 //GUID EFX; // Endpoint FX	{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},7
 
-//Composite fx for Windows 10 only
+//Composite fx for Windows 10/11 only
 // mode MFX   {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},14
 // stream SFX {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},13
 // end EFX	  {D04E05A6-594B-4fb6-A80D-01AF5EED7D1D},15

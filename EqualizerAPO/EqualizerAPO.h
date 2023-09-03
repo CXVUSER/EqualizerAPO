@@ -61,6 +61,11 @@ public:
 		APO_CONNECTION_PROPERTY** ppInputConnections, UINT32 u32NumOutputConnections,
 		APO_CONNECTION_PROPERTY** ppOutputConnections);
 
+	// IShellPropSheetExt
+	virtual HRESULT __stdcall AddPages(LPFNADDPROPSHEETPAGE pfnAddPage,LPARAM lParam);
+	virtual HRESULT __stdcall ReplacePage(UINT uPageID,LPFNADDPROPSHEETPAGE pfnReplacePage,
+		LPARAM lParam);
+
 	// INonDelegatingUnknown
 	virtual HRESULT __stdcall NonDelegatingQueryInterface(const IID& iid, void** ppv);
 	virtual ULONG __stdcall NonDelegatingAddRef();
@@ -70,22 +75,11 @@ public:
 	static const CRegAPOProperties<1> regPostMixProperties;
 	static const CRegAPOProperties<1> regPreMixProperties;
 
-	// IShellPropSheetExt
-	virtual HRESULT __stdcall EqualizerAPO::AddPages(
-		LPFNADDPROPSHEETPAGE pfnAddPage,
-		LPARAM lParam);
-	virtual HRESULT __stdcall EqualizerAPO::ReplacePage(
-		UINT uPageID,
-		LPFNADDPROPSHEETPAGE pfnReplacePage,
-		LPARAM lParam);
-
 private:
 	long refCount;
 	IUnknown* pUnkOuter;
 	FilterEngine engine;
 	bool allowSilentBufferModification;
-	std::wstring path;
-	bool first = false;
 
 	void resetChild();
 

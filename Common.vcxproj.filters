@@ -153,13 +153,16 @@
     <ClInclude Include="filters\PluginFactory.h">
       <Filter>filters</Filter>
     </ClInclude>
-    <ClInclude Include="filters\APOFilter.h">
+    <ClInclude Include="filters\apochaining\APOTabProvider.h">
       <Filter>filters\apochainig</Filter>
     </ClInclude>
-    <ClInclude Include="filters\APOFilterFactory.h">
+    <ClInclude Include="filters\apochaining\APOFilter.h">
       <Filter>filters\apochainig</Filter>
     </ClInclude>
-    <ClInclude Include="IPropStore.h">
+    <ClInclude Include="filters\apochaining\APOFilterFactory.h">
+      <Filter>filters\apochainig</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\apochaining\IPropStore.h">
       <Filter>filters\apochainig</Filter>
     </ClInclude>
   </ItemGroup>
@@ -300,13 +303,16 @@
     <ClCompile Include="filters\PluginFactory.cpp">
       <Filter>filters</Filter>
     </ClCompile>
-    <ClCompile Include="filters\APOFilter.cpp">
+    <ClCompile Include="filters\apochaining\APOTabProvider.cpp">
       <Filter>filters\apochainig</Filter>
     </ClCompile>
-    <ClCompile Include="filters\APOFilterFactory.cpp">
+    <ClCompile Include="filters\apochaining\APOFilter.cpp">
       <Filter>filters\apochainig</Filter>
     </ClCompile>
-    <ClCompile Include="IPropStore.cpp">
+    <ClCompile Include="filters\apochaining\APOFilterFactory.cpp">
+      <Filter>filters\apochainig</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\apochaining\IPropStore.cpp">
       <Filter>filters\apochainig</Filter>
     </ClCompile>
   </ItemGroup>
