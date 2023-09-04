@@ -1,6 +1,4 @@
 ﻿#include "stdafx.h"
-#include "helpers/StringHelper.h"
-#include "helpers/LogHelper.h"
 #include "APOFilter.h"
 
 using namespace std;

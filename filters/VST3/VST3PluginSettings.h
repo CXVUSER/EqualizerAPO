@@ -17,11 +17,9 @@
 #pragma once
 
 #include <memory>
-#include "pluginterfaces/vst/vsttypes.h"
 #include "pluginterfaces/base/ibstream.h"
 
 using namespace Steinberg;
-using namespace Steinberg::Vst;
 
 class VST3PluginSettings : public IBStream, ISizeableStream
 {

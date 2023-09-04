@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "stdafx.h"
 #include <wincrypt.h>
 #include "IFilter.h"
 #include "FilterEngine.h"
@@ -29,9 +28,12 @@
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pluginterfaces/vst/ivstunits.h"
 #include "public.sdk/source/vst/hosting/connectionproxy.h"
+#include "pluginterfaces/vst/vsttypes.h"
+
 #include "VST3PluginSettings.h"
 
 using namespace Steinberg;
+using namespace Steinberg::Vst;
 
 #pragma AVRT_VTABLES_BEGIN
 class VST3PluginFilter : public IFilter
