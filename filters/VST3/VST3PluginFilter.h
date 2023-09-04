@@ -41,18 +41,6 @@ using namespace Steinberg;
 using namespace Steinberg::Vst;
 using namespace Steinberg::Vst::SpeakerArr;
 
-#define func(T,h,str)	\
-		reinterpret_cast<T>(GetProcAddress(h, str))
-/*
-template <typename ret, typename ...arg> std::function<ret(arg...)> call(HMODULE h,LPCSTR func) {
-	auto addr = GetProcAddress(h, func);
-	typedef ret(*fc)(arg...);
-	fc f = reinterpret_cast<fc>(addr);
-	std::function<ret(arg...)> x = f;
-	return x;
-}
-*/
-
 #pragma AVRT_VTABLES_BEGIN
 class VST3PluginFilter : public IFilter
 {

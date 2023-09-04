@@ -128,8 +128,8 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	//unsigned int frameCount = sampleRate / 100;
 
 	//get global functions
-	auto _InitDll = func(InitModuleFunc, m_Plugindll, "InitDll");
-	auto _GetPluginFactory = func(GetPluginFactory, m_Plugindll, "GetPluginFactory");
+	auto _InitDll = (InitModuleFunc) GetProcAddress(m_Plugindll, "InitDll");
+	auto _GetPluginFactory = (GetPluginFactory) GetProcAddress(m_Plugindll, "GetPluginFactory");
 
 	//Initialize Plugin
 	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0)
@@ -232,13 +232,13 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	for (size_t i = 0; i < buscountout; i++)
 		actbus(m_IComponent, buscountout,kOutput);
 
-	if (m_Settings.size() > 0)
+	if (!m_Settings.empty())
 	{
 		VST3PluginSettings set;
 		DWORD bufSize = 0;
 
 		CryptStringToBinaryW(m_Settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
-		auto buf = reinterpret_cast<BYTE*>(malloc(bufSize));
+		auto buf = (BYTE*) malloc(bufSize);
 		if (buf) {
 			if (CryptStringToBinaryW(m_Settings.data(), 0, CRYPT_STRING_BASE64, buf, &bufSize, NULL, NULL) == TRUE)
 			{
@@ -325,7 +325,7 @@ VST3PluginFilter::~VST3PluginFilter()
 			m_IComponent->terminate();
 		}
 
-		auto _ExitDll = func(ExitDll, m_Plugindll, "ExitDll");
+		auto _ExitDll = (ExitDll) GetProcAddress(m_Plugindll, "ExitDll");
 		if (_ExitDll) {
 			_ExitDll();
 		}
