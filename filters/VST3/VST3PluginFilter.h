@@ -16,25 +16,19 @@
 
 #pragma once
 
-#include "IFilter.h"
 #include "stdafx.h"
-#include <memory>
 #include <wincrypt.h>
-//#include <functional>
+#include "IFilter.h"
 #include "FilterEngine.h"
-#include "..//..//helpers/RegistryHelper.h"
+#include "helpers/RegistryHelper.h"
+#include "helpers/LogHelper.h"
 
 //VST3_SDK
-#include "pluginterfaces/base/funknown.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pluginterfaces/vst/ivstunits.h"
-#include "pluginterfaces/vst/vsttypes.h"
 #include "public.sdk/source/vst/hosting/connectionproxy.h"
-#include "pluginterfaces/base/ibstream.h"
-#include "base/source/fstreamer.h"
-#include "pluginterfaces/vst/vstspeaker.h"
 #include "VST3PluginSettings.h"
 
 using namespace Steinberg;
