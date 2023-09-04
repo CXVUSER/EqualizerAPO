@@ -128,8 +128,11 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 	//unsigned int frameCount = sampleRate / 100;
 
 	//get global functions
-	auto _InitDll = (InitModuleFunc) GetProcAddress(m_Plugindll, "InitDll");
-	auto _GetPluginFactory = (GetPluginFactory) GetProcAddress(m_Plugindll, "GetPluginFactory");
+	typedef bool (*VST3InitDll) ();
+	auto _InitDll = (VST3InitDll) GetProcAddress(m_Plugindll, "InitDll");
+
+	typedef Steinberg::IPluginFactory* (*VST3GetPluginFactory) ();
+	auto _GetPluginFactory = (VST3GetPluginFactory) GetProcAddress(m_Plugindll, "GetPluginFactory");
 
 	//Initialize Plugin
 	if ((!_InitDll || !_GetPluginFactory) || _InitDll() == 0)
@@ -325,7 +328,8 @@ VST3PluginFilter::~VST3PluginFilter()
 			m_IComponent->terminate();
 		}
 
-		auto _ExitDll = (ExitDll) GetProcAddress(m_Plugindll, "ExitDll");
+		typedef bool (*VST3ExitDll) ();
+		auto _ExitDll = (VST3ExitDll) GetProcAddress(m_Plugindll, "ExitDll");
 		if (_ExitDll) {
 			_ExitDll();
 		}

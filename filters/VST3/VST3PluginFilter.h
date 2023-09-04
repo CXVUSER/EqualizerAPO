@@ -38,17 +38,11 @@
 #include "VST3PluginSettings.h"
 
 using namespace Steinberg;
-using namespace Steinberg::Vst;
-using namespace Steinberg::Vst::SpeakerArr;
 
 #pragma AVRT_VTABLES_BEGIN
 class VST3PluginFilter : public IFilter
 {
 public:
-
-	typedef bool (*InitModuleFunc) ();
-	typedef Steinberg::IPluginFactory* (*GetPluginFactory) ();
-	typedef bool (*ExitDll) ();
 
 	VST3PluginFilter(FilterEngine* e, std::wstring path, std::wstring settings);
 	~VST3PluginFilter();
