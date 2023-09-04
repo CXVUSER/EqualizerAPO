@@ -12,7 +12,6 @@
  *
  *
  *	 APOFilter
- *	 24 April 2019
  *	 Class for chaining APO lib's
  */
 
