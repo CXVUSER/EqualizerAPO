@@ -23,7 +23,7 @@
 #include <wincrypt.h>
 //#include <functional>
 #include "FilterEngine.h"
-#include "..//helpers/RegistryHelper.h"
+#include "..//..//helpers/RegistryHelper.h"
 
 //VST3_SDK
 #include "pluginterfaces/base/funknown.h"

@@ -144,12 +144,6 @@
     <ClInclude Include="parser\LogicalOperators.h">
       <Filter>parser</Filter>
     </ClInclude>
-    <ClInclude Include="filters\VST3PluginFilter.h">
-      <Filter>filters</Filter>
-    </ClInclude>
-    <ClInclude Include="filters\VST3PluginFilterFactory.h">
-      <Filter>filters</Filter>
-    </ClInclude>
     <ClInclude Include="filters\PluginFactory.h">
       <Filter>filters</Filter>
     </ClInclude>
@@ -164,6 +158,12 @@
     </ClInclude>
     <ClInclude Include="filters\apochaining\IPropStore.h">
       <Filter>filters\apochainig</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\VST3\VST3PluginFilter.h">
+      <Filter>filters\VST3</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\VST3\VST3PluginFilterFactory.h">
+      <Filter>filters\VST3</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -294,12 +294,6 @@
     <ClCompile Include="parser\LogicalOperators.cpp">
       <Filter>parser</Filter>
     </ClCompile>
-    <ClCompile Include="filters\VST3PluginFilter.cpp">
-      <Filter>filters</Filter>
-    </ClCompile>
-    <ClCompile Include="filters\VST3PluginFilterFactory.cpp">
-      <Filter>filters</Filter>
-    </ClCompile>
     <ClCompile Include="filters\PluginFactory.cpp">
       <Filter>filters</Filter>
     </ClCompile>
@@ -314,6 +308,12 @@
     </ClCompile>
     <ClCompile Include="filters\apochaining\IPropStore.cpp">
       <Filter>filters\apochainig</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\VST3\VST3PluginFilter.cpp">
+      <Filter>filters\VST3</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\VST3\VST3PluginFilterFactory.cpp">
+      <Filter>filters\VST3</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -334,6 +334,9 @@
     </Filter>
     <Filter Include="filters\apochainig">
       <UniqueIdentifier>{2640f13a-9053-4975-a169-3466c7b820fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="filters\VST3">
+      <UniqueIdentifier>{48db25cf-14fa-47ff-bf59-1fb758e3141c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

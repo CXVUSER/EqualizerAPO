@@ -56,7 +56,7 @@
 #include "filters/GraphicEQFilterFactory.h"
 #include "filters/VSTPluginFilterFactory.h"
 #include "filters/loudnessCorrection/LoudnessCorrectionFilterFactory.h"
-#include "filters/VST3PluginFilterFactory.h"
+#include "filters/VST3/VST3PluginFilterFactory.h"
 #include "filters/apochaining/APOFilterFactory.h"
 #include "filters/PluginFactory.h"
 
