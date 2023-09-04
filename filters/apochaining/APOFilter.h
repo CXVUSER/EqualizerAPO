@@ -18,15 +18,8 @@
 #pragma once
 
 #include "IFilter.h"
-
-#include <Unknwn.h>
-#include <audioenginebaseapo.h>
-#include <BaseAudioProcessingObject.h>
-#include <audioclient.h>
-#include <propvarutil.h>
-#include <memory>
 #include "FilterEngine.h"
-#include "..//..//helpers/RegistryHelper.h"
+#include "helpers/RegistryHelper.h"
 #include "IPropStore.h"
 
 //KS_NODETYPE				{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},0
