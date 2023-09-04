@@ -1,5 +1,6 @@
-# EqualizerAPO 1.3
+# EqualizerAPO
 
+My New features
 1. Added support apo chaining(run another vendor apo's proprietary sound drivers 'realtek,creative,dolby')
 2. Added partial(not ui) support for VST3
 
@@ -7,6 +8,25 @@ Apochaining syntax:
   APO: <GUID_to_apo_vendor_library> UI <GUID_to_apo_ui_vendor_library>
 
 VST3: Dll <path_to_dll> Data <settings_for_plugin>
+
+# What'is it?
+Equalizer APO is a parametric / graphic equalizer for Windows. It is implemented
+as an Audio Processing Object (APO) for the system effect infrastructure
+introduced with Windows Vista.
+
+Features:
+- virtually unlimited number of filters
+- works on any number of channels
+- very low latency, which makes it suited for interactive applications
+- low CPU usage
+- modular graphical user interface
+- VST plugin support
+- integrates into Voicemeeter (http://www.voicemeeter.com/)
+
+Requirements:
+- Windows Vista or later (currently only Windows 7, 8, 8.1, 10 and 11 have been tested)
+- the application must not bypass the system effect infrastructure
+(APIs like ASIO or WASAPI exclusive mode can not be used)
 
 # Equalizer APO compilation 
 Compilation prerequisites
