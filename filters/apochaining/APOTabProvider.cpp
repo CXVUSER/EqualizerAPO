@@ -1,7 +1,4 @@
 ﻿#include "stdafx.h"
-#include <functional>
-#include "helpers/StringHelper.h"
-#include "helpers/LogHelper.h"
 #include "APOTabProvider.h"
 
 HRESULT APOTabProvider::AddPages(LPFNADDPROPSHEETPAGE pfnAddPage, LPARAM lParam)
