@@ -12,7 +12,6 @@
  *
  *
  *	 VST3 pkugin wrapper
- *	 15 fev 2020
  */
 
 #pragma once

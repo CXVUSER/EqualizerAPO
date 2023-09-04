@@ -12,7 +12,6 @@
  *
  *
  *	 IPropertyStore
- *	 24 April 2019
  *	 Class for gathering APO properties from registry (APOFilter.h)
  */
 

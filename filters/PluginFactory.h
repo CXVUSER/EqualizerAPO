@@ -12,7 +12,6 @@
  *    ░                      ░
  *
  *
- *	4 nov 2019
  *	Plugin loader
  */
 
