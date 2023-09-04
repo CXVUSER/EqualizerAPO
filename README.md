@@ -1,13 +1,12 @@
 # EqualizerAPO
 
 My New features
-1. Added support apo chaining(run another vendor apo's proprietary sound drivers 'realtek,creative,dolby')
-2. Added partial(not ui) support for VST3
+- Added support apo chaining(run another vendor apo's proprietary sound drivers 'realtek,creative,dolby')
+- Added partial(not ui) support for VST3
 
-Apochaining syntax:
-  APO: FX <GUID_to_apo_vendor_library> UI <GUID_to_apo_ui_vendor_library>
-
-VST3: Dll <path_to_dll> Data <settings_for_plugin>
+Usage syntax:
+- APO: FX <GUID_to_apo_vendor_library> UI <GUID_to_apo_ui_vendor_library>
+- VST3: Dll "<path_to_vst3_plugin>" Data "<settings_for_plugin>"
 
 # What'is it?
 Equalizer APO is a parametric / graphic equalizer for Windows. It is implemented

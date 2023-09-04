@@ -1,8 +1,6 @@
 ﻿#include "stdafx.h"
 #include "VST3PluginFilter.h"
 
-using namespace std;
-
 VST3PluginFilter::VST3PluginFilter(FilterEngine* e, std::wstring path, std::wstring settings)
 	: m_Eapo(e), m_Path(path), m_Settings(settings) {
 }

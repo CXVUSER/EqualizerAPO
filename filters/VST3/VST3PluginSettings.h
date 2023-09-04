@@ -11,7 +11,7 @@
  *    ░                      ░
  *
  *
- *	 VST3 pkugin wrapper
+ *	 VST3 pkugin settings
  */
 
 #pragma once
@@ -25,7 +25,6 @@ class VST3PluginSettings : public IBStream, ISizeableStream
 {
 public:
 
-	VST3PluginSettings() {};
 	~VST3PluginSettings() {
 		if (m_buf != 0)
 			free(m_buf);

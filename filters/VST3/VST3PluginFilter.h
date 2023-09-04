@@ -32,6 +32,7 @@
 
 #include "VST3PluginSettings.h"
 
+using namespace std;
 using namespace Steinberg;
 using namespace Steinberg::Vst;
 
