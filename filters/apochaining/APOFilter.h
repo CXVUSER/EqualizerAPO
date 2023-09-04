@@ -52,6 +52,8 @@
 			  if (mem != NULL)  \
 				{ CoTaskMemFree(mem); }
 
+using namespace std;
+
 #pragma AVRT_VTABLES_BEGIN
 class APOProxyFilter : public IFilter
 {

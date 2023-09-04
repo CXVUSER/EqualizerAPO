@@ -1,8 +1,6 @@
 ﻿#include "stdafx.h"
 #include "APOFilter.h"
 
-using namespace std;
-
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 

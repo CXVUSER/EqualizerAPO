@@ -1,5 +1,4 @@
-﻿
-/***
+﻿/***
  *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
  *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
  *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
@@ -13,7 +12,6 @@
  *
  *
  *	 VST3 pkugin wrapper
- *	 15 fev 2020
  */
 
 #pragma once
@@ -22,6 +20,12 @@
 
 #include "IFilterFactory.h"
 #include "IFilter.h"
+#include "helpers/StringHelper.h"
+#include "helpers/LogHelper.h"
+#include "VST3PluginFilter.h"
+#include "FilterEngine.h"
+
+using namespace std;
 
 class VST3PluginFilterFactory : public IFilterFactory
 {
@@ -30,5 +34,5 @@ public:
 	void initialize(FilterEngine* engine) override;
 
 private:
-	FilterEngine* en;
+	FilterEngine* filterEngine;
 };

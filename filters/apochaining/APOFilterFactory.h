@@ -1,5 +1,4 @@
-﻿
-/***
+﻿/***
  *     ▄████▄  ▒██   ██▒ ██▒   █▓ █    ██   ██████ ▓█████  ██▀███
  *    ▒██▀ ▀█  ▒▒ █ █ ▒░▓██░   █▒ ██  ▓██▒▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒
  *    ▒▓█    ▄ ░░  █   ░ ▓██  █▒░▓██  ▒██░░ ▓██▄   ▒███   ▓██ ░▄█ ▒
@@ -12,16 +11,20 @@
  *    ░                      ░
  *
  *
- *	 ApoPluginFilter
- *	 24 April 2019
+ *	 APOFilter factory
+ *	 Class for chaining APO lib's
  */
 
 #pragma once
 
 #include <string>
-
 #include "IFilterFactory.h"
 #include "IFilter.h"
+#include "helpers/StringHelper.h"
+#include "APOFilter.h"
+#include "FilterEngine.h"
+
+using namespace std;
 
 class APOFilterFactory : public IFilterFactory
 {
@@ -30,5 +33,5 @@ public:
 	void initialize(FilterEngine* engine) override;
 
 private:
-	FilterEngine* en;
+	FilterEngine* filterEngine;
 };
