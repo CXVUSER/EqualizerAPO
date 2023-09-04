@@ -53,12 +53,12 @@ template <typename ret, typename ...arg> std::function<ret(arg...)> call(HMODULE
 }
 */
 
-class settings : public IBStream, ISizeableStream
+class VST3PluginSettings : public IBStream, ISizeableStream
 {
 public:
 
-	settings() {};
-	~settings() {
+	VST3PluginSettings() {};
+	~VST3PluginSettings() {
 		if (m_buf != 0)
 			free(m_buf);
 	};

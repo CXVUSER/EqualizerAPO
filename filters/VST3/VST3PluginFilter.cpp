@@ -251,7 +251,7 @@ std::vector<std::wstring> VST3PluginFilter::initialize(float sampleRate, unsigne
 
 	if (m_Settings.size() > 0)
 	{
-		settings set;
+		VST3PluginSettings set;
 		DWORD bufSize = 0;
 
 		CryptStringToBinaryW(m_Settings.data(), 0, CRYPT_STRING_BASE64, NULL, &bufSize, NULL, NULL);
