@@ -165,6 +165,9 @@
     <ClInclude Include="filters\VST3\VST3PluginFilterFactory.h">
       <Filter>filters\VST3</Filter>
     </ClInclude>
+    <ClInclude Include="filters\VST3\VST3PluginSettings.h">
+      <Filter>filters\VST3</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -313,6 +316,9 @@
       <Filter>filters\VST3</Filter>
     </ClCompile>
     <ClCompile Include="filters\VST3\VST3PluginFilterFactory.cpp">
+      <Filter>filters\VST3</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\VST3\VST3PluginSettings.cpp">
       <Filter>filters\VST3</Filter>
     </ClCompile>
   </ItemGroup>

@@ -253,6 +253,7 @@
     <ClInclude Include="filters\StageFilterFactory.h" />
     <ClInclude Include="filters\VST3\VST3PluginFilter.h" />
     <ClInclude Include="filters\VST3\VST3PluginFilterFactory.h" />
+    <ClInclude Include="filters\VST3\VST3PluginSettings.h" />
     <ClInclude Include="filters\VSTPluginFilter.h" />
     <ClInclude Include="filters\VSTPluginFilterFactory.h" />
     <ClInclude Include="helpers\AbstractLibrary.h" />
@@ -314,6 +315,7 @@
     <ClCompile Include="filters\StageFilterFactory.cpp" />
     <ClCompile Include="filters\VST3\VST3PluginFilter.cpp" />
     <ClCompile Include="filters\VST3\VST3PluginFilterFactory.cpp" />
+    <ClCompile Include="filters\VST3\VST3PluginSettings.cpp" />
     <ClCompile Include="filters\VSTPluginFilter.cpp" />
     <ClCompile Include="filters\VSTPluginFilterFactory.cpp" />
     <ClCompile Include="helpers\AbstractLibrary.cpp" />
