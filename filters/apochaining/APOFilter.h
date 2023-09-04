@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "audioclient.h"
 #include "IFilter.h"
 #include "FilterEngine.h"
 #include "helpers/LogHelper.h"

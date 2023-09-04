@@ -34,7 +34,7 @@ ULONG IPropertyStoreFX::Release() {
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
 
-	auto RET_DEVICE_STRING = [pv](wchar_t* p) {
+	auto RET_DEVICE_STRING = [&](wchar_t* p) {
 		if (p == 0)
 			return E_FAIL;
 		auto name = (wchar_t*) CoTaskMemAlloc(_MAX_PATH);
