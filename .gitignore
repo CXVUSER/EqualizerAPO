@@ -358,3 +358,5 @@ EqualizerAPO.dll
 # End of https://www.gitignore.io/api/visualstudio
 *.txt
 /x64/Release/EqualizerAPO.dll
+
+*.user
