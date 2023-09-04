@@ -51,10 +51,6 @@
               if (punk != NULL)  \
                 { punk->Release(); (punk) = NULL; }
 
-#define SAFE_MEM_RELEASE(punk)  \
-              if (punk != NULL)  \
-                { delete punk; (punk) = NULL; }
-
 #define MH_RELEASE(mem)  \
 			  if (mem != NULL)  \
 				{ MemoryHelper::free(mem); }
@@ -62,9 +58,6 @@
 #define CM_RELEASE(mem)  \
 			  if (mem != NULL)  \
 				{ CoTaskMemFree(mem); }
-
-#define func(T,h,str)	\
-		reinterpret_cast<T>(GetProcAddress(h, str))
 
 #pragma AVRT_VTABLES_BEGIN
 class APOProxyFilter : public IFilter
