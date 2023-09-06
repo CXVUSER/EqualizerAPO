@@ -32,9 +32,9 @@ public:
 	IPropertyStoreFX::IPropertyStoreFX(std::wstring& Device, REGSAM dwAccess);
 	~IPropertyStoreFX();
 
-	virtual HRESULT QueryInterface(const IID& riid, void** ppvObject);
-	virtual ULONG AddRef();
-	virtual ULONG Release();
+	virtual HRESULT QueryInterface(const IID& riid, void** ppvObject) { return E_NOINTERFACE; };
+	virtual ULONG AddRef() { return 0; };
+	virtual ULONG Release() { return 0; };
 
 	//IPropertyStore
 	virtual HRESULT Getcount() { return E_NOTIMPL; };

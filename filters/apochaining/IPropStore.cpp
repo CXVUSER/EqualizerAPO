@@ -11,47 +11,31 @@ IPropertyStoreFX::~IPropertyStoreFX() {
 	DeleteCriticalSection(&m_cr);
 	RegCloseKey(m_Reg);
 	//RegCloseKey(regProp);
-}
-
-HRESULT IPropertyStoreFX::QueryInterface(const IID& riid, void** ppvObject) {
-	if (riid == GUID_NULL)
-		return S_OK;
-	return E_NOINTERFACE;
-};
-
-ULONG IPropertyStoreFX::AddRef() {
-	return InterlockedIncrement(&m_Ref);
-};
-
-ULONG IPropertyStoreFX::Release() {
-	if (InterlockedDecrement(&m_Ref) == 1) {
-		this->~IPropertyStoreFX();
-		return 0;
-	}
-	return m_Ref;
 };
 
 HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 	PROPVARIANT* pv) {
 
-	auto RET_DEVICE_STRING = [&](wchar_t* p) {
-		if (p == 0)
+	auto RET_DEVICE_STRING = [&](wchar_t* dev_name) {
+		if (!dev_name)
 			return E_FAIL;
-		auto name = (wchar_t*) CoTaskMemAlloc(_MAX_PATH);
-		if (name == 0)
+		size_t size = wcslen(dev_name);
+		auto name = (wchar_t*)CoTaskMemAlloc(sizeof(wchar_t) * size);
+		if (!name)
 			return E_OUTOFMEMORY;
-		memset(name, 0, 240);
-		wcscpy(name, p);
+
+		memset(name, 0, sizeof(wchar_t) * size);
+		wcscpy_s(name, size, dev_name);
 		pv->vt = VT_LPWSTR;
 		pv->pwszVal = name;
 		return S_OK;
-	};
+		};
 
 	EnterCriticalSection(&m_cr);
 
 	HRESULT hr = E_FAIL;
 
-	if (pv == 0) { 
+	if (pv == 0) {
 		hr = E_POINTER;
 		goto LEAVE_;
 	}
@@ -63,9 +47,8 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		auto cl = GUID_NULL;
 		LPOLESTR gd = 0;
 
-		if (FAILED(CLSIDFromString(m_guid.c_str(), &cl))) 
+		if (FAILED(CLSIDFromString(m_guid.c_str(), &cl)))
 		{
-			hr = E_FAIL;
 			goto LEAVE_;
 		}
 		if (SUCCEEDED(StringFromCLSID(cl, &gd)))
@@ -77,27 +60,26 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		}
 		else {
 			CoTaskMemFree(gd);
-			hr = E_FAIL;
 			goto LEAVE_;
 		}
 	}
 
 	if (key == PKEY_DeviceInterface_FriendlyName) //soundcard name
 	{
-		RET_DEVICE_STRING(L"ESI Juli@");
-			goto LEAVE_;
-	} //...
+		hr = RET_DEVICE_STRING(L"Realtek High Definition Audio");
+		goto LEAVE_;
+	}
 
 	if (key == PKEY_Device_FriendlyName) //interface name
 	{
-		RET_DEVICE_STRING(L"Speakers (ESI Juli@)");
-			goto LEAVE_;
-	} //...
+		hr = RET_DEVICE_STRING(L"Speakers (Realtek High Definition Audio)");
+		goto LEAVE_;
+	}
 
 	wchar_t keystr[128] = { 0 };
 
 	//Convert CLSID to GUID string
-	hr = StringCchPrintf(keystr, 128, L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x},%d", key.fmtid.Data1,
+	if (FAILED(StringCchPrintf(keystr, 128, L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x},%d", key.fmtid.Data1,
 		key.fmtid.Data2,
 		key.fmtid.Data3,
 		key.fmtid.Data4[0],
@@ -108,141 +90,127 @@ HRESULT IPropertyStoreFX::Getvalue(REFPROPERTYKEY key,
 		key.fmtid.Data4[5],
 		key.fmtid.Data4[6],
 		key.fmtid.Data4[7],
-		key.pid);
-
-	if (FAILED(hr)) {
-		hr = E_FAIL;
+		key.pid)))
+	{
 		goto LEAVE_;
 	}
 
 	DWORD type = 0;
 	DWORD size = 0;
 
-	auto status = RegQueryValueExW(m_Reg, keystr, 0, &type, 0, &size);
-
-	if (status) {
-		hr = E_FAIL;
+	if (RegQueryValueExW(m_Reg, keystr, 0, &type, 0, &size)) {
 		goto LEAVE_;
 	}
 
-	if (type == REG_NONE) {
-		hr = E_FAIL;
-		goto LEAVE_;
-	}
-
-	if (type == REG_SZ)
+	switch (type)
 	{
-		auto x = (wchar_t*) CoTaskMemAlloc(size);
-		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_SZ, 0, x, &size);
+	case REG_NONE:
+		break;
+	case REG_SZ: {
+		auto str = (wchar_t*)CoTaskMemAlloc(size);
 
-		if (!status) {
-			pv->vt = VT_LPWSTR;
-			pv->pwszVal = x;
-			hr = S_OK;
+		if (str) {
+			memset(str, 0, size);
+			if (!RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_SZ, 0, str, &size)) {
+				pv->vt = VT_LPWSTR;
+				pv->pwszVal = str;
+				hr = S_OK;
+			}
 		}
-		goto LEAVE_;
+		break;
 	}
+	case REG_EXPAND_SZ: {
+		size_t s = size + 2;
 
-	if (type == REG_DWORD)
-	{
-		if (size == 4)
+		auto reg_expandstring = (void*) CoTaskMemAlloc(s);
+
+		if (!reg_expandstring)
+			break;
+
+		IMalloc* gMalloc;
+		size_t realsize = 0;
+
+		if (SUCCEEDED(CoGetMalloc(true, &gMalloc)))
 		{
-			auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &size);
+			realsize = gMalloc->GetSize(reg_expandstring);
+			gMalloc->Release();
+		}
+		else {
+			goto LEAVE_FREE;
+		}
 
-			if (!status) {
+		memset(reg_expandstring, 0, realsize);
+
+		if (RegGetValueW(m_Reg, 0, keystr, 0x6, 0, reg_expandstring, &size) == ERROR_SUCCESS)
+		{
+			wchar_t strbuf[520];
+			memset(strbuf, 0, 520);
+
+			if (SHLoadIndirectString((PCWSTR)reg_expandstring, strbuf, 260, 0) != E_FAIL)
+			{
+				if (strbuf[0]) {
+					size_t s = (sizeof(wchar_t) * wcslen(strbuf)) + 1;
+					pv->pwszVal = 0;
+
+					auto data = (LPWSTR)CoTaskMemAlloc(s);
+
+					if (data)
+					{
+						memset(data, 0, s);
+						wcscpy(data, strbuf);
+
+						pv->pwszVal = data;
+						pv->vt = VT_LPWSTR;
+						hr = S_OK;
+					}
+				}
+			}
+		}
+
+	LEAVE_FREE:
+		CoTaskMemFree(reg_expandstring);
+		break;
+	}
+	case REG_BINARY: {
+		auto pvdata = (LPVOID)CoTaskMemAlloc(size);
+
+		if (pvdata) {
+			memset(pvdata, 0, size);
+			if (!RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_BINARY, 0, pvdata, &size))
+				hr = DeserializePropVarinat(type, pvdata, size, pv);
+			CoTaskMemFree(pvdata);
+		}
+		break;
+	}
+	case REG_DWORD: {
+		if (size == sizeof(DWORD))
+		{
+			if (!RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_DWORD, 0, &pv->ulVal, &size)) {
 				pv->vt = VT_UI4;
 				hr = S_OK;
 			}
 		}
-		goto LEAVE_;
+		break;
 	}
+	case REG_MULTI_SZ: {
+		auto str = (LPVOID)CoTaskMemAlloc(size);
 
-	if (type == REG_BINARY)
-	{
-		auto pvdata = (LPVOID) CoTaskMemAlloc(size);
-
-		if (pvdata) {
-			auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_BINARY, 0, pvdata, &size);
-
-			if (!status)
-				hr = DeserializePropVarinat(type, pvdata, size, pv);
-			CoTaskMemFree(pvdata);
-		}
-		goto LEAVE_;
-	}
-
-	if (type == REG_MULTI_SZ)
-	{
-		LPVOID str = CoTaskMemAlloc(size);
-		auto status = RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &size);
-
-		if (!status) {
-			hr = InitPropVariantFromStringAsVector((PCWSTR) str, pv);
-
-			if (FAILED(hr))
-				hr = E_FAIL;
-
-			CoTaskMemFree(str);
-			hr = S_OK;
-		}
-		goto LEAVE_;
-	}
-
-	if (type == REG_EXPAND_SZ) {
-		size_t s = size + 2;
-
-		auto vm = CoTaskMemAlloc(s);
-
-		if (vm)
-		{
-			hr = E_FAIL;
-			goto LEAVE_;
-		}
-
-			IMalloc* ml;
-			size_t s2 = 0;
-
-			if (SUCCEEDED(CoGetMalloc(true, &ml)))
-			{
-				s2 = ml->GetSize(vm);
-				ml->Release();
-			}
-
-			memset(vm, 0, s2);
-
-			auto status = RegGetValueW(m_Reg, 0, keystr, 0x6, 0, vm, &size);
-
-			if (status != ERROR_FILE_NOT_FOUND) {
-				if (status == ERROR_SUCCESS)
-				{
-					wchar_t buf[520];
-					memset(buf, 0, 520);
-
-					if (SHLoadIndirectString((PCWSTR) vm, buf, 260, 0) != E_FAIL)
-					{
-						pv->vt = VT_LPWSTR;
-						pv->pwszVal = (LPWSTR)buf;
-						hr = S_OK;
-						goto LEAVE_;
-					}
-					else
-					{
-						if (GetLastError() == ERROR_ACCESS_DENIED) {
-							hr = E_FAIL;
-							goto LEAVE_;
-						}
-					}
+		if (str) {
+			memset(str, 0, size);
+			if (!RegGetValueW(m_Reg, 0, keystr, RRF_RT_REG_MULTI_SZ, 0, str, &size)) {
+				if (FAILED(InitPropVariantFromStringAsVector((PCWSTR)str, pv))) {
+					break;
 				}
-				else
-				{
-					hr = E_FAIL;
-					goto LEAVE_;
+				else {
+					hr = S_OK;
 				}
 			}
-			goto LEAVE_;
+		}
+		break;
 	}
+	};
 
-	LEAVE_:
+LEAVE_:
 	LeaveCriticalSection(&m_cr);
 	return hr;
 };
@@ -256,15 +224,9 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 
 	EnterCriticalSection(&m_cr);
 
-	std::wstring regfx = MM_DEV_AUD_REG_PATH;
-	//std::wstring regprop = MM_DEV_AUD_REG_PATH;
-
-	hr = CoCreateInstance
-	(
-		CLSID_MMDeviceEnumerator, NULL,
+	hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL,
 		CLSCTX_ALL, IID_IMMDeviceEnumerator,
-		(void**)&enumemator
-	);
+		(void**)&enumemator);
 
 	if (SUCCEEDED(hr)) {
 		if (enumemator != 0)
@@ -282,10 +244,16 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 
 				if (SUCCEEDED(imd->QueryInterface(__uuidof(IMMEndpoint), (void**)&ime)))
 				{
+					std::wstring regfx = MM_DEV_AUD_REG_PATH;
+					//std::wstring regprop = MM_DEV_AUD_REG_PATH;
+
 					if (ime == 0)
 						return false;
 					if (FAILED(ime->GetDataFlow(&devicetype)))
 						return false;
+
+					ime->Release();
+					imd->Release();
 
 					switch (devicetype)
 					{
@@ -301,20 +269,17 @@ bool IPropertyStoreFX::TryOpenPropertyStoreRegKey()
 						break;
 					}
 
+					if (m_Reg = RegistryHelper::openKey(regfx, m_dwAcc))
+						result = true;
+					/*
+					if (!(regProp = RegistryHelper::openKey(regProp, _dwAcc)))
+						return false;
+					*/
 					/*
 					regprop += L"Render\\" + _guid + L"\\Properties";
 					regprop += L"Capture\\" + _guid + L"\\Properties";
 					*/
 				}
-				ime->Release();
-				imd->Release();
-
-				if (m_Reg = RegistryHelper::openKey(regfx, m_dwAcc))
-					result = true;
-				/*
-				if (!(regProp = RegistryHelper::openKey(regProp, _dwAcc)))
-					return false;
-				*/
 			}
 		}
 	}
@@ -327,7 +292,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 {
 	if (!src)
 		return E_FAIL;
-	if	(!cb)
+	if (!cb)
 		return E_FAIL;
 	if (!dest)
 		return E_FAIL;
@@ -341,7 +306,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		return S_OK;
 	}
 	else if (type == REG_SZ) {
-		auto s = wcslen((wchar_t*)src) * 2;
+		auto s = sizeof(wchar_t) * wcslen((wchar_t*)src);
 		auto mem = (LPWSTR)CoTaskMemAlloc(s);
 		if (!mem)
 			return E_FAIL;
@@ -353,7 +318,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		return S_OK;
 	}
 
-	auto p = (PROPVARIANT*) src;
+	auto p = (PROPVARIANT*)src;
 	auto t = p->vt;
 
 	if (t == VT_EMPTY) {
@@ -364,7 +329,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 			return E_FAIL;
 
 		dest->blob.cbSize = p->wReserved2;
-		dest->blob.pBlobData = (BYTE*) mem;
+		dest->blob.pBlobData = (BYTE*)mem;
 
 		memcpy(mem, &p->pbstrVal, s);
 		dest->vt = p->vt;
@@ -376,7 +341,7 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		if (!mem)
 			return E_FAIL;
 
-		dest->blob.pBlobData =(BYTE*) mem;
+		dest->blob.pBlobData = (BYTE*)mem;
 		dest->blob.cbSize = cb;
 
 		memcpy(mem, &p->blob, s);
