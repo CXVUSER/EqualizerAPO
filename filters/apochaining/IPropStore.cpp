@@ -354,6 +354,61 @@ HRESULT IPropertyStoreFX::DeserializePropVarinat(int type, void* src, size_t cb,
 		return S_OK;
 	}
 
+	//..................... understand
+	//if ((t & 0x2004) == 0x2004) VT_ARRAY? VT_SAFEARRAY?
+	//{
+	//	SAFEARRAYBOUND bound;
+	//	size_t v46 = cb - 0x18;
+	//	size_t v22 = (cb - 0x18) >> 2;
+	//	unsigned __int8* v23 = (unsigned __int8*)src + 0x18;
+	//	ULONG *v24 = ((ULONG*)src + 0x18);
+	//	int v25 = 0;
+	//	bound.cElements = v22;
+	//	bound.lLbound = 0;
+	//	SAFEARRAY* sf = SafeArrayCreate(VT_R4, 1, &bound);
+	//	if (sf) {
+	//		if (FAILED(SafeArrayLock(sf)))
+	//			return E_FAIL;
+
+	//		if (v22)
+	//		{
+	//			unsigned __int8* v29 = (unsigned __int8*)v23 + 0x4;
+	//			while (v29 >= (unsigned __int8*) v24)
+	//			{
+	//				if (v29 < v23)
+	//					return E_FAIL;
+
+	//				if (v29 - v23 > v46)
+	//					return E_FAIL;
+
+	//				bound.cElements = *v24;
+
+	//				LONG lBond;
+	//				LONG uBond;
+	//				SafeArrayGetLBound(sf, 1, &lBond);
+	//				if (v25 < lBond || v25 > SafeArrayGetUBound(sf, 1, &uBond))
+	//					return E_FAIL;
+
+	//				//sf->rgsabound[4*((char)src-lBond) = bound;
+
+	//				++v24;
+	//				v29 += 0x4;
+	//			
+	//				if (++v25 >= v22) {
+	//					SafeArrayUnlock(sf);
+	//					dest->parray = sf;
+	//					dest->vt = p->vt;
+	//				}
+
+	//				v23 = ((unsigned __int8*)(src))+0x18;
+	//			}
+
+	//			return E_FAIL;	
+	//		}
+	//	}
+	//}
+	//.....................
+
 	switch (p->vt)
 	{
 	case VT_I2:
