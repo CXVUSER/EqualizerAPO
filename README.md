@@ -1,6 +1,6 @@
 # EqualizerAPO
 
-My New features
+Modification features:
 - Added support apo chaining(run another vendor apo's proprietary sound drivers 'realtek,creative,dolby')
 - Added partial(not ui) support for VST3
 - Added plugins support (DSP dll)
