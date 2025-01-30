@@ -360,3 +360,5 @@ EqualizerAPO.dll
 /x64/Release/EqualizerAPO.dll
 
 *.user
+builddev.bat
+setenv.bat
